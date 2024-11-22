@@ -16,3 +16,7 @@ npm start
 //server
 npm install concurrently --save-dev
 npm install --save-dev nodemon
+
+
+//Client
+npm install @mui/material @emotion/react @emotion/styled
