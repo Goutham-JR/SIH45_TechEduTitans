@@ -17,7 +17,7 @@ const SignUp = () => {
           maxWidth: 400,
           width: '100%',
           padding: '20px',
-          backgroundColor: '#1976d2',
+          backgroundColor: '#091057',
           color: '#fff',
         }}
       >
