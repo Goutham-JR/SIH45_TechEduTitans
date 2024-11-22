@@ -1,10 +1,27 @@
-import React from 'react';
+import {React, useState} from 'react';
 import { Card, CardContent, Typography, TextField, Button, FormLabel } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
 
 const SignIn = () => {
-  const navigate = useNavigate(); // React Router's navigation function
+  const navigate = useNavigate(); 
+  const [email, setEmail] = useState();
+  const [password, setPassword] = useState();
 
+  const handleSubmit = async (e) =>{
+    e.preventDefault();
+
+    try{
+      const response = await axios.post('http://localhost:5000/api/auth/signin', {email, password});
+      const {token} = response.data;
+
+      localStorage.setItem('token',token);
+      navigate('/dashboard');
+    }catch(err)
+    {
+      console.log(err?.message)
+    }
+  };
   return (
     <div
       style={{
@@ -28,13 +45,14 @@ const SignIn = () => {
           <Typography variant="h5" gutterBottom align="center">
             Sign In
           </Typography>
-          <form>
+          <form onSubmit={handleSubmit}>
             <TextField
               label="Email"
               type="email"
               fullWidth
               variant="outlined"
               margin="normal"
+              onChange={(e) => setEmail(e.target.value)}
               style={{ backgroundColor: '#fff', borderRadius: '5px' }}
             />
             <TextField
@@ -43,6 +61,7 @@ const SignIn = () => {
               fullWidth
               variant="outlined"
               margin="normal"
+              onChange={(e) => setPassword(e.target.value)}
               style={{ backgroundColor: '#fff', borderRadius: '5px' }}
             />
             <Button

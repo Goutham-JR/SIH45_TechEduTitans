@@ -16,7 +16,9 @@ npm start
 //server
 npm install concurrently --save-dev
 npm install --save-dev nodemon
+npm install bcrypt jsonwebtoken
 
 
 //Client
 npm install @mui/material @emotion/react @emotion/styled
+npm install axios

@@ -1,7 +1,27 @@
-import React from 'react';
+import {React, useState} from 'react';
 import { Card, CardContent, Typography, TextField, Button, } from '@mui/material';
+import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
 
 const SignUp = () => {
+  const navigate = useNavigate(); 
+  const [email, setEmail] = useState();
+  const [password, setPassword] = useState();
+  const [name, setName] = useState();
+  const handleSubmit = async (e) =>{
+    e.preventDefault();
+
+    try{
+      const response = await axios.post('http://localhost:5000/api/auth/signup', {name, email, password});
+      const {token} = response.data;
+
+      localStorage.setItem('token',token);
+      navigate('/signin');
+    }catch(err)
+    {
+      console.log(err?.message)
+    }
+  };
   return (
     <div
       style={{
@@ -25,13 +45,14 @@ const SignUp = () => {
           <Typography variant="h5" gutterBottom align="center">
             Sign Up
           </Typography>
-          <form>
+          <form onSubmit={handleSubmit}>
             <TextField
               label="Name"
               type="text"
               fullWidth
               variant="outlined"
               margin="normal"
+              onChange={(e) => setName(e.target.value)}
               style={{ backgroundColor: '#fff', borderRadius: '5px' }}
             />
             <TextField
@@ -40,6 +61,7 @@ const SignUp = () => {
               fullWidth
               variant="outlined"
               margin="normal"
+              onChange={(e) => setEmail(e.target.value)}
               style={{ backgroundColor: '#fff', borderRadius: '5px' }}
             />
             <TextField
@@ -48,6 +70,7 @@ const SignUp = () => {
               fullWidth
               variant="outlined"
               margin="normal"
+              onChange={(e) => setPassword(e.target.value)}
               style={{ backgroundColor: '#fff', borderRadius: '5px' }}
             />
             <Button
