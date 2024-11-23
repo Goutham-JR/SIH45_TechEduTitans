@@ -13,7 +13,7 @@ function App() {
       {/* Define the application routes */}
       <Routes>
         {/* Root path "/" will render the Home page */}
-        <Route path="/" element={<Course />} />
+        <Route path="/" element={<Home />} />
         {/* Additional routes */}
         <Route path="/home" element={<Home />} />
         <Route path="/profile" element={<Profile />} />
