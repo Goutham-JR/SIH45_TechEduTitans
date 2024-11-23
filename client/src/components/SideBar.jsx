@@ -11,6 +11,7 @@ import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
 import SettingsIcon from '@mui/icons-material/Settings';
 import LogoutIcon from '@mui/icons-material/Logout';
 
+
 const SideBar = () => {
   const menuItemsTop = [
     { text: 'Home', icon: <HomeIcon /> },
@@ -26,7 +27,7 @@ const SideBar = () => {
   return (
     <Box
       sx={{
-        width: 80, // Minimized sidebar width
+        width: 80, 
         height: '100vh',
         backgroundColor: '#f5f5f5',
         boxShadow: 1,
@@ -43,7 +44,7 @@ const SideBar = () => {
               '&:hover .text': {
                 visibility: 'visible',
                 position: 'absolute',
-                left: '80px', // Position text outside the sidebar
+                left: '80px',
                 backgroundColor: '#ffffff',
                 padding: '4px 8px',
                 borderRadius: '4px',
@@ -54,7 +55,7 @@ const SideBar = () => {
             <ListItemButton>
               <ListItemIcon
                 sx={{
-                  minWidth: 40, // Space for icon
+                  minWidth: 40, 
                 }}
               >
                 {item.icon}
@@ -63,7 +64,7 @@ const SideBar = () => {
                 primary={item.text}
                 className="text"
                 sx={{
-                  visibility: 'hidden', // Initially hidden
+                  visibility: 'hidden',
                   whiteSpace: 'nowrap',
                 }}
               />
@@ -111,6 +112,7 @@ const SideBar = () => {
         ))}
       </List>
     </Box>
+    
   );
 };
 

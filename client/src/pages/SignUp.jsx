@@ -1,10 +1,9 @@
 import React, { useState } from 'react';
-import { Card, CardContent, Typography, TextField, Button, Snackbar } from '@mui/material';
+import { Card, CardContent, Typography, TextField, Button, Snackbar, Alert } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import Joi from 'joi';
 import axios from 'axios';
 
-// Joi schema for SignUp validation
 const signUpSchema = Joi.object({
   name: Joi.string().min(3).max(30).pattern(/^[a-zA-Z\s]+$/).required().messages({
     'string.base': 'Name must be a string.',
@@ -43,14 +42,14 @@ const SignUp = () => {
 
     const { error: validationError } = signUpSchema.validate(formData);
     if (validationError) {
-      setError(validationError.details[0].message);
+      setSnackbar({ open: true, message: validationError.details[0].message, severity: 'error' });
       return;
     }
 
     try {
       await axios.post('http://localhost:5000/api/auth/signup', formData);
       setSnackbar({ open: true, message: 'Sign up successful! Redirecting to Sign In page.', severity: 'success' });
-      setTimeout(() => navigate('/signin'), 1500);
+      setTimeout(() => navigate('/signin'), 2000);
     } catch (err) {
       const errorMessage = err.response?.data?.error || 'Something went wrong. Please try again.';
       setSnackbar({ open: true, message: errorMessage, severity: 'error' });
@@ -72,11 +71,6 @@ const SignUp = () => {
           <Typography variant="h5" gutterBottom align="center">
             Sign Up
           </Typography>
-          {error && (
-            <Typography color="error" align="center" style={{ marginBottom: '10px' }}>
-              {error}
-            </Typography>
-          )}
           <form onSubmit={handleSubmit}>
             <label htmlFor="name" style={{ color: '#ffffff' }}>
               Name
@@ -90,11 +84,6 @@ const SignUp = () => {
               value={formData.name}
               onChange={handleChange}
               placeholder="Enter your name"
-              InputProps={{
-                inputProps: {
-                  style: { color: formData.name ? '#000' : '#aaa' },
-                },
-              }}
               style={{ backgroundColor: '#fff', borderRadius: '5px' }}
             />
 
@@ -111,11 +100,6 @@ const SignUp = () => {
               value={formData.email}
               onChange={handleChange}
               placeholder="Enter your email"
-              InputProps={{
-                inputProps: {
-                  style: { color: formData.email ? '#000' : '#aaa' },
-                },
-              }}
               style={{ backgroundColor: '#fff', borderRadius: '5px' }}
             />
 
@@ -132,11 +116,6 @@ const SignUp = () => {
               value={formData.password}
               onChange={handleChange}
               placeholder="Enter your password"
-              InputProps={{
-                inputProps: {
-                  style: { color: formData.password ? '#000' : '#aaa' },
-                },
-              }}
               style={{ backgroundColor: '#fff', borderRadius: '5px' }}
             />
 
@@ -148,33 +127,27 @@ const SignUp = () => {
                 marginTop: '20px',
                 backgroundColor: '#ffffff',
                 color: '#1976d2',
-                transition: 'background-color 0.3s ease, color 0.3s ease',
+                transition: 'background-color 0.3s, color 0.3s',
               }}
-              onMouseEnter={(e) => {
+              onMouseOver={(e) => {
                 e.target.style.backgroundColor = '#1976d2';
                 e.target.style.color = '#ffffff';
               }}
-              onMouseLeave={(e) => {
+              onMouseOut={(e) => {
                 e.target.style.backgroundColor = '#ffffff';
                 e.target.style.color = '#1976d2';
               }}
             >
               Sign Up
             </Button>
+
           </form>
           <Typography
             align="center"
             style={{ marginTop: '20px', cursor: 'pointer', color: '#ffffff', textDecoration: 'underline' }}
-            onMouseEnter={(e) => {
-              e.target.style.color = '#1976d2';
-              e.target.style.textDecoration = 'none';
-            }}
-            onMouseLeave={(e) => {
-              e.target.style.color = '#ffffff';
-              e.target.style.textDecoration = 'underline';
-            }}
+            onClick={() => navigate('/signin')}
           >
-            <span onClick={() => navigate('/signin')}>Already have an account? Sign In</span>
+            Already have an account? Sign In
           </Typography>
         </CardContent>
       </Card>
@@ -182,8 +155,12 @@ const SignUp = () => {
         open={snackbar.open}
         autoHideDuration={3000}
         onClose={() => setSnackbar({ open: false, message: '', severity: '' })}
-        message={snackbar.message}
-      />
+        anchorOrigin={{ vertical: 'top', horizontal: 'center' }} // Top center alignment
+      >
+        <Alert onClose={() => setSnackbar({ open: false, message: '', severity: '' })} severity={snackbar.severity}>
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
     </div>
   );
 };

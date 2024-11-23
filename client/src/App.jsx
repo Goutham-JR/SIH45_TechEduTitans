@@ -5,6 +5,7 @@ import SignUp from './pages/SignUp';
 import Course from './pages/Course';
 import Home from './pages/Home';
 import Profile from './pages/Profile';
+import CourseUpload from './pages/UploadCourse';
 
 function App() {
   return (
@@ -19,6 +20,7 @@ function App() {
         <Route path="/signin" element={<SignIn />} />
         <Route path="/signup" element={<SignUp />} />
         <Route path="/course" element={<Course />} />
+        <Route path="/courseupload" element={<CourseUpload />} />
       </Routes>
     </BrowserRouter>
   );
