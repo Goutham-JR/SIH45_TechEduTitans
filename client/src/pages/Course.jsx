@@ -1,142 +1,110 @@
-import React, { useState } from "react";
-import { Container, Grid, Typography, Accordion, AccordionSummary, AccordionDetails, Box } from "@mui/material";
-import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
-import ReactPlayer from "react-player";
+import React, { useState } from 'react';
+import SideBar from '../components/SideBar';
+import Header from '../components/Header';
+import CourseVideo from '../components/CourseVideo';
+import { Box, Typography, List, ListItem, ListItemText, Divider } from '@mui/material';
 
-const App = () => {
-  const [currentVideo, setCurrentVideo] = useState({
-    title: "Introduction to AI Hardware",
-    description: "This video provides an introduction to the components of AI hardware, including GPUs and CPUs.",
-    videoUrl: "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
-    duration: "10:15",
-  });
+function Course() {
+  const [currentVideo, setCurrentVideo] = useState(null);
 
-  const courseContent = [
-    {
-      week: "Week 1",
-      topics: [
-        {
-          title: "Introduction to AI Hardware",
-          description: "This video provides an introduction to the components of AI hardware, including GPUs and CPUs.",
-          videoUrl: "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
-          duration: "10:15",
-        },
-        {
-          title: "Introduction to System Software",
-          description: "Learn about system software and its role in AI systems.",
-          videoUrl: "https://www.youtube.com/watch?v=3tmd-ClpJxA",
-          duration: "12:30",
-        },
-      ],
-    },
-    {
-      week: "Week 2",
-      topics: [
-        {
-          title: "Introduction to Containers",
-          description: "Explore the basics of containers and their use in AI development.",
-          videoUrl: "https://www.youtube.com/watch?v=9bZkp7q19f0",
-          duration: "15:45",
-        },
-        {
-          title: "Kubernetes Deep Dive",
-          description: "A deep dive into Kubernetes and orchestration tools for AI.",
-          videoUrl: "https://www.youtube.com/watch?v=ZZ5LpwO-An4",
-          duration: "14:20",
-        },
-      ],
-    },
-    {
-      week: "Week 3",
-      topics: [
-        {
-          title: "DeepOps Overview",
-          description: "Overview of DeepOps tools for AI workload management.",
-          videoUrl: "https://www.youtube.com/watch?v=ENgLmfZlu9g",
-          duration: "11:50",
-        },
-        {
-          title: "Building Compute Clusters",
-          description: "Learn how to build high-performance compute clusters for AI.",
-          videoUrl: "https://www.youtube.com/watch?v=OPf0YbXqDm0",
-          duration: "13:00",
-        },
-      ],
-    },
-    // Add more weeks and topics as needed
-  ];
+  // Example resources data for each video
+  const videoResources = {
+    "Video 1": [
+      { title: "Resource 1", url: "https://example.com/resource1" },
+      { title: "Resource 2", url: "https://example.com/resource2" },
+    ],
+    "Video 2": [
+      { title: "Resource A", url: "https://example.com/resourceA" },
+      { title: "Resource B", url: "https://example.com/resourceB" },
+    ],
+  };
 
-  const handleTopicClick = (topic) => {
-    setCurrentVideo({
-      title: topic.title,
-      description: topic.description,
-      videoUrl: topic.videoUrl,
-      duration: topic.duration,
-    });
+  const handleVideoSelect = (video) => {
+    setCurrentVideo(video);
   };
 
   return (
-    <Container>
-      <Typography variant="h4" sx={{ mt: 3, mb: 3, textAlign: "center" }}>
-        Course Overview
-      </Typography>
+    <Box sx={{ display: 'flex', flexDirection: 'column', height: '100vh', overflow: 'hidden' }}>
+      {/* Header Section */}
+      <Box
+        sx={{
+          flexShrink: 0,
+          backgroundColor: '#3f51b5',
+          color: 'white',
+          padding: 2,
+        }}
+      >
+        <Header video={currentVideo} />
+      </Box>
 
-      <Grid container spacing={4}>
-        {/* Center: Video Player */}
-        <Grid item xs={12} md={8}>
-          <Box sx={{ position: "relative", paddingTop: "56.25%", width: "100%" }}>
-            <ReactPlayer
-              url={currentVideo.videoUrl}
-              controls
-              width="100%"
-              height="100%"
-              style={{ position: "absolute", top: 0, left: 0 }}
-            />
-          </Box>
-          <Box sx={{ mt: 3 }}>
-            <Typography variant="h5" sx={{ fontWeight: "bold" }}>
-              {currentVideo.title}
-            </Typography>
-            <Typography variant="body1" sx={{ mt: 1 }}>
-              {currentVideo.description}
-            </Typography>
-            <Typography variant="caption" sx={{ display: "block", mt: 1, color: "gray" }}>
-              Duration: {currentVideo.duration}
-            </Typography>
-          </Box>
-        </Grid>
+      {/* Content Section */}
+      <Box sx={{ display: 'flex', flexGrow: 1, overflow: 'hidden', marginTop:3, }}>
+        {/* Sidebar Section */}
+        <Box
+          sx={{
+            width: '9%',
+            backgroundColor: '#f5f5f5',
+            borderRight: '1px solid #ddd',
+            overflowY: 'auto',
+          }}
+        >
+          <SideBar onVideoSelect={handleVideoSelect} />
+        </Box>
 
-        {/* Right Sidebar: Weekly Topics */}
-        <Grid item xs={12} md={4}>
-          {courseContent.map((week, index) => (
-            <Accordion key={index}>
-              <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-                <Typography>{week.week}</Typography>
-              </AccordionSummary>
-              <AccordionDetails>
-                {week.topics.map((topic, subIndex) => (
-                  <Box
-                    key={subIndex}
-                    sx={{
-                      mb: 1,
-                      cursor: "pointer",
-                      color: "blue",
-                      textDecoration: "underline",
-                    }}
-                    onClick={() => handleTopicClick(topic)}
-                  >
-                    <Typography>
-                      {topic.title} <span style={{ color: "gray" }}>({topic.duration})</span>
-                    </Typography>
-                  </Box>
-                ))}
-              </AccordionDetails>
-            </Accordion>
-          ))}
-        </Grid>
-      </Grid>
-    </Container>
+        {/* Resources Section */}
+        <Box
+          sx={{
+            width: '30%',
+            backgroundColor: '#f9f9f9',
+            borderRight: '1px solid #ddd',
+            padding: 2,
+            overflowY: 'auto',
+          }}
+        >
+          <Typography variant="h6" gutterBottom>
+            Resources
+          </Typography>
+          <Divider sx={{ marginBottom: 2 }} />
+          {currentVideo && videoResources[currentVideo] ? (
+            <List>
+              {videoResources[currentVideo].map((resource, index) => (
+                <ListItem key={index} sx={{ paddingY: 1 }}>
+                  <ListItemText
+                    primary={resource.title}
+                    secondary={
+                      <a
+                        href={resource.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={{ textDecoration: 'none', color: '#3f51b5' }}
+                      >
+                        {resource.url}
+                      </a>
+                    }
+                  />
+                </ListItem>
+              ))}
+            </List>
+          ) : (
+            <Typography variant="body2" color="textSecondary">
+              No resources available for this video.
+            </Typography>
+          )}
+        </Box>
+
+        {/* Main Content Section (Video Player) */}
+        <Box
+          sx={{
+            flexGrow: 1,
+            padding: 2,
+            overflowY: 'auto',
+          }}
+        >
+          <CourseVideo video={currentVideo} />
+        </Box>
+      </Box>
+    </Box>
   );
-};
+}
 
-export default App;
+export default Course;

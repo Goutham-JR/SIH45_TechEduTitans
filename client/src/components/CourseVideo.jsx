@@ -26,7 +26,7 @@ const App = () => {
   const [currentVideo, setCurrentVideo] = useState({
     title: "Introduction to AI Hardware",
     description: "This video provides an introduction to the components of AI hardware, including GPUs and CPUs.",
-    videoUrl: "/A.mkv", // Assuming the file is in the public folder
+    videoUrl: "/A.mp4", // Assuming the file is in the public folder
   });
 
   const [isPlaying, setIsPlaying] = useState(false);
@@ -49,14 +49,14 @@ const App = () => {
           id: 1,
           title: "Introduction to AI Hardware",
           description: "This video provides an introduction to the components of AI hardware, including GPUs and CPUs.",
-          videoUrl: "/A.mkv",
+          videoUrl: "/A.mp4",
           duration: "10:15",
         },
         {
           id: 2,
           title: "Introduction to System Software",
           description: "Learn about system software and its role in AI systems.",
-          videoUrl: "/A.mkv",
+          videoUrl: "/A.mp4",
           duration: "12:30",
         },
       ],
