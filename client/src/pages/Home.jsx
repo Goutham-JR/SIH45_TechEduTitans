@@ -1,19 +1,13 @@
 import React from "react";
 import { AppBar, Toolbar, Typography, Box, Button, Grid, Card, CardContent, CardMedia, Container } from "@mui/material";
+import Header from "../components/Header"
 
 const Home = () => {
   return (
     <div>
       {/* Navigation Bar */}
       <AppBar position="static" color="primary">
-        <Toolbar>
-          <Typography variant="h6" sx={{ flexGrow: 1 }}>
-            My Website
-          </Typography>
-          <Button color="inherit">Home</Button>
-          <Button color="inherit">About</Button>
-          <Button color="inherit">Contact</Button>
-        </Toolbar>
+        <Header></Header>
       </AppBar>
 
       {/* Hero Section */}
