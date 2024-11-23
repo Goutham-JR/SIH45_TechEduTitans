@@ -1,10 +1,9 @@
 import React, { useState } from 'react';
-import { Card, CardContent, Typography, TextField, Button, Snackbar } from '@mui/material';
+import { Card, CardContent, Typography, TextField, Button, Snackbar, Alert } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import Joi from 'joi';
 import axios from 'axios';
 
-// Joi schema for SignUp validation
 const signUpSchema = Joi.object({
   name: Joi.string().min(3).max(30).pattern(/^[a-zA-Z\s]+$/).required().messages({
     'string.base': 'Name must be a string.',
@@ -43,14 +42,14 @@ const SignUp = () => {
 
     const { error: validationError } = signUpSchema.validate(formData);
     if (validationError) {
-      setError(validationError.details[0].message);
+      setSnackbar({ open: true, message: validationError.details[0].message, severity: 'error' });
       return;
     }
 
     try {
       await axios.post('http://localhost:5000/api/auth/signup', formData);
       setSnackbar({ open: true, message: 'Sign up successful! Redirecting to Sign In page.', severity: 'success' });
-      setTimeout(() => navigate('/signin'), 1500);
+      setTimeout(() => navigate('/signin'), 2000);
     } catch (err) {
       const errorMessage = err.response?.data?.error || 'Something went wrong. Please try again.';
       setSnackbar({ open: true, message: errorMessage, severity: 'error' });
@@ -58,28 +57,41 @@ const SignUp = () => {
   };
 
   return (
-    <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh', backgroundColor: '#f0f2f5' }}>
+    <div
+      style={{
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        minHeight: '100vh',
+        backgroundColor: '#f0f2f5',
+      }}
+    >
       <Card style={{ maxWidth: 400, padding: 20, backgroundColor: '#091057', color: '#fff' }}>
         <CardContent>
-          <Typography variant="h5" gutterBottom align="center">Sign Up</Typography>
-          {error && (
-            <Typography color="error" align="center" style={{ marginBottom: '10px' }}>
-              {error}
-            </Typography>
-          )}
+          <Typography variant="h5" gutterBottom align="center">
+            Sign Up
+          </Typography>
           <form onSubmit={handleSubmit}>
+            <label htmlFor="name" style={{ color: '#ffffff' }}>
+              Name
+            </label>
             <TextField
-              label="Name"
+              id="name"
               name="name"
               fullWidth
               variant="outlined"
               margin="normal"
               value={formData.name}
               onChange={handleChange}
+              placeholder="Enter your name"
               style={{ backgroundColor: '#fff', borderRadius: '5px' }}
             />
+
+            <label htmlFor="email" style={{ color: '#ffffff' }}>
+              Email
+            </label>
             <TextField
-              label="Email"
+              id="email"
               name="email"
               type="email"
               fullWidth
@@ -87,10 +99,15 @@ const SignUp = () => {
               margin="normal"
               value={formData.email}
               onChange={handleChange}
+              placeholder="Enter your email"
               style={{ backgroundColor: '#fff', borderRadius: '5px' }}
             />
+
+            <label htmlFor="password" style={{ color: '#ffffff' }}>
+              Password
+            </label>
             <TextField
-              label="Password"
+              id="password"
               name="password"
               type="password"
               fullWidth
@@ -98,18 +115,52 @@ const SignUp = () => {
               margin="normal"
               value={formData.password}
               onChange={handleChange}
+              placeholder="Enter your password"
               style={{ backgroundColor: '#fff', borderRadius: '5px' }}
             />
-            <Button type="submit" variant="contained" fullWidth style={{ marginTop: '20px', backgroundColor: '#ffffff', color: '#1976d2' }}>
+
+            <Button
+              type="submit"
+              variant="contained"
+              fullWidth
+              style={{
+                marginTop: '20px',
+                backgroundColor: '#ffffff',
+                color: '#1976d2',
+                transition: 'background-color 0.3s, color 0.3s',
+              }}
+              onMouseOver={(e) => {
+                e.target.style.backgroundColor = '#1976d2';
+                e.target.style.color = '#ffffff';
+              }}
+              onMouseOut={(e) => {
+                e.target.style.backgroundColor = '#ffffff';
+                e.target.style.color = '#1976d2';
+              }}
+            >
               Sign Up
             </Button>
+
           </form>
-          <Typography align="center" style={{ marginTop: '20px', cursor: 'pointer' }}>
-            <span onClick={() => navigate('/signin')} style={{ color: '#ffffff', textDecoration: 'underline' }}>Already have an account? Sign In</span>
+          <Typography
+            align="center"
+            style={{ marginTop: '20px', cursor: 'pointer', color: '#ffffff', textDecoration: 'underline' }}
+            onClick={() => navigate('/signin')}
+          >
+            Already have an account? Sign In
           </Typography>
         </CardContent>
       </Card>
-      <Snackbar open={snackbar.open} autoHideDuration={3000} onClose={() => setSnackbar({ open: false, message: '', severity: '' })} message={snackbar.message} />
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={3000}
+        onClose={() => setSnackbar({ open: false, message: '', severity: '' })}
+        anchorOrigin={{ vertical: 'top', horizontal: 'center' }} // Top center alignment
+      >
+        <Alert onClose={() => setSnackbar({ open: false, message: '', severity: '' })} severity={snackbar.severity}>
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
     </div>
   );
 };
