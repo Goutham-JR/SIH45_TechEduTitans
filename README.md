@@ -22,3 +22,6 @@ npm install bcrypt jsonwebtoken
 //Client
 npm install @mui/material @emotion/react @emotion/styled
 npm install axios
+
+//validation
+npm install joi

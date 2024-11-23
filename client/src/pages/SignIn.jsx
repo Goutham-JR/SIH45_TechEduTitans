@@ -1,27 +1,55 @@
-import {React, useState} from 'react';
-import { Card, CardContent, Typography, TextField, Button, FormLabel } from '@mui/material';
+import React, { useState } from 'react';
+import { Card, CardContent, Typography, TextField, Button, Snackbar } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
+import Joi from 'joi';
 import axios from 'axios';
 
-const SignIn = () => {
-  const navigate = useNavigate(); 
-  const [email, setEmail] = useState();
-  const [password, setPassword] = useState();
+// Joi schema for SignIn validation
+const signInSchema = Joi.object({
+  email: Joi.string().email({ tlds: { allow: false } }).required().messages({
+    'string.empty': 'Email is required.',
+    'string.email': 'Please enter a valid email.',
+  }),
+  password: Joi.string().min(6).required().messages({
+    'string.empty': 'Password is required.',
+    'string.min': 'Password must be at least 6 characters long.',
+  }),
+});
 
-  const handleSubmit = async (e) =>{
+const SignIn = () => {
+  const navigate = useNavigate();
+  const [formData, setFormData] = useState({ email: '', password: '' });
+  const [error, setError] = useState('');
+  const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: '' });
+
+  const handleChange = (e) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+    setError('');
+  };
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
-    try{
-      const response = await axios.post('http://localhost:5000/api/auth/signin', {email, password});
-      const {token} = response.data;
+    const { error: validationError } = signInSchema.validate(formData);
+    if (validationError) {
+      setError(validationError.details[0].message);
+      return;
+    }
 
-      localStorage.setItem('token',token);
-      navigate('/dashboard');
-    }catch(err)
-    {
-      console.log(err?.message)
+    try {
+      // Call the backend API to check the credentials
+      const response = await axios.post('http://localhost:5000/api/auth/signin', formData);
+
+      // Save the token and redirect
+      localStorage.setItem('token', response.data.token);
+      setSnackbar({ open: true, message: 'Login successful! Redirecting...', severity: 'success' });
+      setTimeout(() => navigate('/dashboard'), 1500);
+    } catch (err) {
+      const errorMessage = err.response?.data?.error || 'Something went wrong. Please try again.';
+      setSnackbar({ open: true, message: errorMessage, severity: 'error' });
     }
   };
+
   return (
     <div
       style={{
@@ -32,60 +60,108 @@ const SignIn = () => {
         backgroundColor: '#f0f2f5',
       }}
     >
-      <Card
-        style={{
-          maxWidth: 400,
-          width: '100%',
-          padding: '20px',
-          backgroundColor: '#091057',
-          color: '#fff',
-        }}
-      >
+      <Card style={{ maxWidth: 400, padding: 20, backgroundColor: '#091057', color: '#fff' }}>
         <CardContent>
           <Typography variant="h5" gutterBottom align="center">
             Sign In
           </Typography>
+          {error && (
+            <Typography color="error" align="center" style={{ marginBottom: '10px' }}>
+              {error}
+            </Typography>
+          )}
           <form onSubmit={handleSubmit}>
+            <label htmlFor="email" style={{ color: '#ffffff' }}>
+              Email
+            </label>
             <TextField
-              label="Email"
+              id="email"
+              name="email"
               type="email"
               fullWidth
               variant="outlined"
               margin="normal"
-              onChange={(e) => setEmail(e.target.value)}
+              value={formData.email}
+              onChange={handleChange}
+              placeholder="Enter your email"
+              InputProps={{
+                inputProps: {
+                  style: { color: formData.email ? '#000' : '#aaa' },
+                },
+              }}
               style={{ backgroundColor: '#fff', borderRadius: '5px' }}
             />
+
+            <label htmlFor="password" style={{ color: '#ffffff' }}>
+              Password
+            </label>
             <TextField
-              label="Password"
+              id="password"
+              name="password"
               type="password"
               fullWidth
               variant="outlined"
               margin="normal"
-              onChange={(e) => setPassword(e.target.value)}
+              value={formData.password}
+              onChange={handleChange}
+              placeholder="Enter your password"
+              InputProps={{
+                inputProps: {
+                  style: { color: formData.password ? '#000' : '#aaa' },
+                },
+              }}
               style={{ backgroundColor: '#fff', borderRadius: '5px' }}
             />
+
             <Button
               type="submit"
               variant="contained"
               fullWidth
-              style={{ marginTop: '20px', backgroundColor: '#ffffff', color: '#1976d2' }}
+              style={{
+                marginTop: '20px',
+                backgroundColor: '#ffffff',
+                color: '#1976d2',
+                transition: 'background-color 0.3s ease, color 0.3s ease',
+              }}
+              onMouseEnter={(e) => {
+                e.target.style.backgroundColor = '#1976d2';
+                e.target.style.color = '#ffffff';
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.backgroundColor = '#ffffff';
+                e.target.style.color = '#1976d2';
+              }}
             >
               Sign In
             </Button>
           </form>
           <Typography
-            variant="body2"
-            style={{ marginTop: '20px', cursor: 'pointer', textAlign: 'center' }}
+            align="center"
+            style={{
+              marginTop: '20px',
+              cursor: 'pointer',
+              color: '#ffffff',
+              textDecoration: 'underline',
+            }}
+            onMouseEnter={(e) => {
+              e.target.style.color = '#1976d2';
+              e.target.style.textDecoration = 'none';
+            }}
+            onMouseLeave={(e) => {
+              e.target.style.color = '#ffffff';
+              e.target.style.textDecoration = 'underline';
+            }}
           >
-            <FormLabel
-              style={{ color: '#ffffff', cursor: 'pointer' }}
-              onClick={() => navigate('/signup')}
-            >
-              Create an account?
-            </FormLabel>
+            <span onClick={() => navigate('/signup')}>Don't have an account? Sign Up</span>
           </Typography>
         </CardContent>
       </Card>
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={3000}
+        onClose={() => setSnackbar({ open: false, message: '', severity: '' })}
+        message={snackbar.message}
+      />
     </div>
   );
 };
