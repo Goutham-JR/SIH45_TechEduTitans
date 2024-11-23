@@ -21,12 +21,11 @@ npm install bcrypt jsonwebtoken
 
 //Client
 npm install @mui/material @emotion/react @emotion/styled
-<<<<<<< Updated upstream
 npm install axios
+npm install @mui/icons-material react-player
+npm install @hello-pangea/dnd
+
+
 
 //validation
 npm install joi
-=======
-npm install @mui/icons-material react-player
-npm install axios
->>>>>>> Stashed changes
