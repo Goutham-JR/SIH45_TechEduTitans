@@ -148,7 +148,7 @@ const AppHeader = () => {
               </Button>
               <Button
                 variant="contained"
-                color="secondary"
+                color="primary"
                 onClick={handleLoginLogout}
                 sx={{ textTransform: "none", color: "white" }}
               >
