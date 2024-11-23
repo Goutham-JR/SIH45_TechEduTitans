@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { Container, Grid, Typography, Accordion, AccordionSummary, AccordionDetails, Box } from "@mui/material";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import ReactPlayer from "react-player";
+import SideBar from "../components/SideBar";
 
 const App = () => {
   const [currentVideo, setCurrentVideo] = useState({
@@ -76,6 +77,8 @@ const App = () => {
   };
 
   return (
+    <>
+    <SideBar></SideBar>
     <Container>
       <Typography variant="h4" sx={{ mt: 3, mb: 3, textAlign: "center" }}>
         Course Overview
@@ -136,6 +139,7 @@ const App = () => {
         </Grid>
       </Grid>
     </Container>
+    </>
   );
 };
 
