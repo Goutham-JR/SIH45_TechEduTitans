@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Card, CardContent, Typography, TextField, Button, Snackbar } from '@mui/material';
+import { Card, CardContent, Typography, TextField, Button, Snackbar, Alert } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import Joi from 'joi';
 import axios from 'axios';
@@ -32,7 +32,7 @@ const SignIn = () => {
 
     const { error: validationError } = signInSchema.validate(formData);
     if (validationError) {
-      setError(validationError.details[0].message);
+      setSnackbar({ open: true, message: validationError.details[0].message, severity: 'error' });
       return;
     }
 
@@ -160,8 +160,12 @@ const SignIn = () => {
         open={snackbar.open}
         autoHideDuration={3000}
         onClose={() => setSnackbar({ open: false, message: '', severity: '' })}
-        message={snackbar.message}
-      />
+        anchorOrigin={{ vertical: 'top', horizontal: 'center' }} // Top center alignment
+      >
+        <Alert onClose={() => setSnackbar({ open: false, message: '', severity: '' })} severity={snackbar.severity}>
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
     </div>
   );
 };

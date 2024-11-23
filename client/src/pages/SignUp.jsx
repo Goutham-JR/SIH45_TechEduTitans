@@ -58,51 +58,28 @@ const SignUp = () => {
   };
 
   return (
-    <div
-      style={{
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
-        minHeight: '100vh',
-        backgroundColor: '#f0f2f5',
-      }}
-    >
+    <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh', backgroundColor: '#f0f2f5' }}>
       <Card style={{ maxWidth: 400, padding: 20, backgroundColor: '#091057', color: '#fff' }}>
         <CardContent>
-          <Typography variant="h5" gutterBottom align="center">
-            Sign Up
-          </Typography>
+          <Typography variant="h5" gutterBottom align="center">Sign Up</Typography>
           {error && (
             <Typography color="error" align="center" style={{ marginBottom: '10px' }}>
               {error}
             </Typography>
           )}
           <form onSubmit={handleSubmit}>
-            <label htmlFor="name" style={{ color: '#ffffff' }}>
-              Name
-            </label>
             <TextField
-              id="name"
+              label="Name"
               name="name"
               fullWidth
               variant="outlined"
               margin="normal"
               value={formData.name}
               onChange={handleChange}
-              placeholder="Enter your name"
-              InputProps={{
-                inputProps: {
-                  style: { color: formData.name ? '#000' : '#aaa' },
-                },
-              }}
               style={{ backgroundColor: '#fff', borderRadius: '5px' }}
             />
-
-            <label htmlFor="email" style={{ color: '#ffffff' }}>
-              Email
-            </label>
             <TextField
-              id="email"
+              label="Email"
               name="email"
               type="email"
               fullWidth
@@ -110,20 +87,10 @@ const SignUp = () => {
               margin="normal"
               value={formData.email}
               onChange={handleChange}
-              placeholder="Enter your email"
-              InputProps={{
-                inputProps: {
-                  style: { color: formData.email ? '#000' : '#aaa' },
-                },
-              }}
               style={{ backgroundColor: '#fff', borderRadius: '5px' }}
             />
-
-            <label htmlFor="password" style={{ color: '#ffffff' }}>
-              Password
-            </label>
             <TextField
-              id="password"
+              label="Password"
               name="password"
               type="password"
               fullWidth
@@ -131,59 +98,18 @@ const SignUp = () => {
               margin="normal"
               value={formData.password}
               onChange={handleChange}
-              placeholder="Enter your password"
-              InputProps={{
-                inputProps: {
-                  style: { color: formData.password ? '#000' : '#aaa' },
-                },
-              }}
               style={{ backgroundColor: '#fff', borderRadius: '5px' }}
             />
-
-            <Button
-              type="submit"
-              variant="contained"
-              fullWidth
-              style={{
-                marginTop: '20px',
-                backgroundColor: '#ffffff',
-                color: '#1976d2',
-                transition: 'background-color 0.3s ease, color 0.3s ease',
-              }}
-              onMouseEnter={(e) => {
-                e.target.style.backgroundColor = '#1976d2';
-                e.target.style.color = '#ffffff';
-              }}
-              onMouseLeave={(e) => {
-                e.target.style.backgroundColor = '#ffffff';
-                e.target.style.color = '#1976d2';
-              }}
-            >
+            <Button type="submit" variant="contained" fullWidth style={{ marginTop: '20px', backgroundColor: '#ffffff', color: '#1976d2' }}>
               Sign Up
             </Button>
           </form>
-          <Typography
-            align="center"
-            style={{ marginTop: '20px', cursor: 'pointer', color: '#ffffff', textDecoration: 'underline' }}
-            onMouseEnter={(e) => {
-              e.target.style.color = '#1976d2';
-              e.target.style.textDecoration = 'none';
-            }}
-            onMouseLeave={(e) => {
-              e.target.style.color = '#ffffff';
-              e.target.style.textDecoration = 'underline';
-            }}
-          >
-            <span onClick={() => navigate('/signin')}>Already have an account? Sign In</span>
+          <Typography align="center" style={{ marginTop: '20px', cursor: 'pointer' }}>
+            <span onClick={() => navigate('/signin')} style={{ color: '#ffffff', textDecoration: 'underline' }}>Already have an account? Sign In</span>
           </Typography>
         </CardContent>
       </Card>
-      <Snackbar
-        open={snackbar.open}
-        autoHideDuration={3000}
-        onClose={() => setSnackbar({ open: false, message: '', severity: '' })}
-        message={snackbar.message}
-      />
+      <Snackbar open={snackbar.open} autoHideDuration={3000} onClose={() => setSnackbar({ open: false, message: '', severity: '' })} message={snackbar.message} />
     </div>
   );
 };
