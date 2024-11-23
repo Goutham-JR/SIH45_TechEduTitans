@@ -16,7 +16,7 @@ const signUpSchema = Joi.object({
       'string.max': 'Name must not exceed 30 characters.',
       'string.pattern.base': 'Name should only contain letters and spaces.',
     }),
-  
+
   email: Joi.string()
     .email()
     .required()
@@ -44,7 +44,6 @@ const signInSchema = Joi.object({
     }),
 
   password: Joi.string()
-    
     .required()
     .messages({
       'string.empty': 'Password is required.',
@@ -64,8 +63,12 @@ exports.signUp = async (req, res) => {
     const userExists = await User.findOne({ email });
     if (userExists) return res.status(400).json({ error: 'User already exists!' });
 
-    // Hash the password
-    const hashedPassword = await bcrypt.hash(password, 10);
+    // Generate a salt
+    const saltRounds = 10; // Salt rounds, you can adjust this as needed
+    const salt = await bcrypt.genSalt(saltRounds);
+
+    // Hash the password with the generated salt
+    const hashedPassword = await bcrypt.hash(password, salt);
 
     // Save the new user
     const newUser = new User({ name, email, password: hashedPassword });
@@ -98,7 +101,7 @@ exports.signIn = async (req, res) => {
     // Generate a token
     const token = jwt.sign(
       { id: user._id },
-      process.env.JWT_SECRET || 'defaultsecret',
+      process.env.JWT_SECRET || 'defaultsecret', // use your own secret key here
       { expiresIn: '1d' }
     );
 
@@ -107,4 +110,4 @@ exports.signIn = async (req, res) => {
     console.error(err);
     res.status(500).json({ error: 'An error occurred while processing your request.' });
   }
-}; 
+};
