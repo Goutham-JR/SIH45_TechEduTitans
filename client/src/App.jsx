@@ -5,7 +5,7 @@ import SignUp from './components/SignUp';
 import Course from './pages/Course';
 import Home from './pages/Home';
 import Profile from './pages/Profile';
-import CourseUpload from './pages/UploadCourse';
+import CourseUpload from './components/UploadCourse';
 
 function App() {
   return (
@@ -13,7 +13,7 @@ function App() {
       {/* Define the application routes */}
       <Routes>
         {/* Root path "/" will render the Home page */}
-        <Route path="/" element={<Home />} />
+        <Route path="/" element={<CourseUpload />} />
         {/* Additional routes */}
         <Route path="/home" element={<Home />} />
         <Route path="/profile" element={<Profile />} />

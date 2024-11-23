@@ -11,30 +11,60 @@ import {
   DialogContent,
   DialogActions,
   DialogTitle,
+  MenuItem,
+  Select,
 } from "@mui/material";
 import AddCircleOutlineIcon from "@mui/icons-material/AddCircleOutline";
 import DeleteIcon from "@mui/icons-material/Delete";
-import CloudUploadIcon from "@mui/icons-material/CloudUpload";
 import { useDropzone } from "react-dropzone";
 
 const CourseUpload = () => {
   const [courseDetails, setCourseDetails] = useState({
     title: "",
     description: "",
-    weeks: [], // Initially no weeks
+    whatYouWillLearn: [""],
+    requirements: [""],
+    weeks: [],
   });
 
-  const [openUploadDialog, setOpenUploadDialog] = useState(false);
-  const [uploadType, setUploadType] = useState(null);
+  const [quizDialogOpen, setQuizDialogOpen] = useState(false);
+  const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
+  const [uploadType, setUploadType] = useState("");
   const [currentWeekIndex, setCurrentWeekIndex] = useState(null);
   const [currentVideoIndex, setCurrentVideoIndex] = useState(null);
+  const [quizzes, setQuizzes] = useState([]);
 
+  // General Handlers
+  const handleCourseChange = (field, value) => {
+    setCourseDetails({ ...courseDetails, [field]: value });
+  };
+
+  const handleArrayChange = (field, index, value) => {
+    const updatedArray = [...courseDetails[field]];
+    updatedArray[index] = value;
+    setCourseDetails({ ...courseDetails, [field]: updatedArray });
+  };
+
+  const addPoint = (field) => {
+    setCourseDetails({
+      ...courseDetails,
+      [field]: [...courseDetails[field], ""],
+    });
+  };
+
+  const deletePoint = (field, index) => {
+    const updatedArray = [...courseDetails[field]];
+    updatedArray.splice(index, 1);
+    setCourseDetails({ ...courseDetails, [field]: updatedArray });
+  };
+
+  // Week and Video Handlers
   const addWeek = () => {
     setCourseDetails({
       ...courseDetails,
       weeks: [
         ...courseDetails.weeks,
-        { weekNumber: courseDetails.weeks.length + 1, videos: [] },
+        { weekNumber: courseDetails.weeks.length + 1, videos: [], quiz: [] },
       ],
     });
   };
@@ -63,21 +93,17 @@ const CourseUpload = () => {
     setCourseDetails({ ...courseDetails, weeks: updatedWeeks });
   };
 
-  const handleCourseChange = (field, value) => {
-    setCourseDetails({ ...courseDetails, [field]: value });
-  };
-
   const handleVideoChange = (weekIndex, videoIndex, field, value) => {
     const updatedWeeks = [...courseDetails.weeks];
     updatedWeeks[weekIndex].videos[videoIndex][field] = value;
     setCourseDetails({ ...courseDetails, weeks: updatedWeeks });
   };
 
-  const openUploadPopup = (type, weekIndex, videoIndex) => {
+  const openUploadDialog = (type, weekIndex, videoIndex) => {
     setUploadType(type);
     setCurrentWeekIndex(weekIndex);
     setCurrentVideoIndex(videoIndex);
-    setOpenUploadDialog(true);
+    setUploadDialogOpen(true);
   };
 
   const handleDrop = (acceptedFiles) => {
@@ -87,7 +113,7 @@ const CourseUpload = () => {
         acceptedFiles[0];
       setCourseDetails({ ...courseDetails, weeks: updatedWeeks });
     }
-    setOpenUploadDialog(false);
+    setUploadDialogOpen(false);
   };
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
@@ -95,9 +121,46 @@ const CourseUpload = () => {
     multiple: false,
   });
 
-  const handleSubmit = () => {
-    console.log("Course Details Submitted:", courseDetails);
-    alert("Course uploaded successfully!");
+  const openQuizDialog = (weekIndex) => {
+    setCurrentWeekIndex(weekIndex);
+    setQuizzes(courseDetails.weeks[weekIndex].quiz || []);
+    setQuizDialogOpen(true);
+  };
+
+  const addQuestionToQuiz = () => {
+    const updatedQuizzes = [...quizzes];
+    updatedQuizzes.push({
+      question: "",
+      options: ["", "", "", ""],
+      correctAnswer: "",
+    });
+    setQuizzes(updatedQuizzes);
+  };
+
+  const deleteQuestionFromQuiz = (index) => {
+    const updatedQuizzes = [...quizzes];
+    updatedQuizzes.splice(index, 1);
+    setQuizzes(updatedQuizzes);
+  };
+
+  const handleQuizChange = (index, field, value) => {
+    const updatedQuizzes = [...quizzes];
+    if (field === "question") {
+      updatedQuizzes[index].question = value;
+    } else if (field.startsWith("option")) {
+      const optionIndex = parseInt(field.split("_")[1], 10);
+      updatedQuizzes[index].options[optionIndex] = value;
+    } else if (field === "correctAnswer") {
+      updatedQuizzes[index].correctAnswer = value;
+    }
+    setQuizzes(updatedQuizzes);
+  };
+
+  const saveQuiz = () => {
+    const updatedWeeks = [...courseDetails.weeks];
+    updatedWeeks[currentWeekIndex].quiz = quizzes;
+    setCourseDetails({ ...courseDetails, weeks: updatedWeeks });
+    setQuizDialogOpen(false);
   };
 
   return (
@@ -127,13 +190,69 @@ const CourseUpload = () => {
           value={courseDetails.description}
           onChange={(e) => handleCourseChange("description", e.target.value)}
         />
+      </Paper>
+
+      {/* What You'll Learn Section */}
+      <Paper sx={{ padding: "20px", marginBottom: "20px" }}>
+        <Typography variant="h6">What You'll Learn</Typography>
+        {courseDetails.whatYouWillLearn.map((point, index) => (
+          <Box display="flex" alignItems="center" key={index} sx={{ marginBottom: "10px" }}>
+            <TextField
+              fullWidth
+              label={`Point ${index + 1}`}
+              variant="outlined"
+              value={point}
+              onChange={(e) =>
+                handleArrayChange("whatYouWillLearn", index, e.target.value)
+              }
+            />
+            <IconButton
+              color="error"
+              onClick={() => deletePoint("whatYouWillLearn", index)}
+              title="Delete Point"
+            >
+              <DeleteIcon />
+            </IconButton>
+          </Box>
+        ))}
         <Button
           variant="contained"
           startIcon={<AddCircleOutlineIcon />}
-          sx={{ marginTop: "10px" }}
-          onClick={addWeek}
+          onClick={() => addPoint("whatYouWillLearn")}
         >
-          Add Week
+          Add Point
+        </Button>
+      </Paper>
+
+      {/* Requirements Section */}
+      <Paper sx={{ padding: "20px", marginBottom: "20px" }}>
+        <Typography variant="h6">Requirements</Typography>
+        {courseDetails.requirements.map((requirement, index) => (
+          <Box display="flex" alignItems="center" key={index} sx={{ marginBottom: "10px" }}>
+            <TextField
+              fullWidth
+              label={`Requirement ${index + 1}`}
+              variant="outlined"
+              value={requirement}
+              onChange={(e) =>
+                handleArrayChange("requirements", index, e.target.value)
+              }
+            />
+            <IconButton
+              color="error"
+              onClick={() => deletePoint("requirements", index)}
+              title="Delete Requirement"
+            >
+              <DeleteIcon />
+            </IconButton>
+          </Box>
+        ))}
+        <Button
+          variant="contained"
+          startIcon={<AddCircleOutlineIcon />}
+          onClick={() => addPoint("requirements")}
+        >
+          Add Requirement
         </Button>
       </Paper>
 
@@ -151,38 +270,23 @@ const CourseUpload = () => {
               >
                 Add Video
               </Button>
-              <IconButton
-                color="error"
-                onClick={() => deleteWeek(weekIndex)}
-                title="Delete Week"
+              <Button
+                variant="outlined"
+                startIcon={<AddCircleOutlineIcon />}
+                onClick={() => openQuizDialog(weekIndex)}
               >
-                <DeleteIcon />
-              </IconButton>
+                Add Quizzes
+              </Button>
             </Box>
           </Box>
           <Divider sx={{ marginY: "10px" }} />
+
           {/* Videos Section */}
           {week.videos.map((video, videoIndex) => (
             <Paper
               key={videoIndex}
-              sx={{
-                padding: "15px",
-                marginBottom: "10px",
-                backgroundColor: "#f9f9f9",
-              }}
+              sx={{ padding: "10px", marginBottom: "10px", backgroundColor: "#f9f9f9" }}
             >
-              <Box display="flex" justifyContent="space-between">
-                <Typography variant="subtitle1">
-                  Video {videoIndex + 1}
-                </Typography>
-                <IconButton
-                  color="error"
-                  onClick={() => deleteVideo(weekIndex, videoIndex)}
-                  title="Delete Video"
-                >
-                  <DeleteIcon />
-                </IconButton>
-              </Box>
               <TextField
                 fullWidth
                 label="Video Title"
@@ -198,38 +302,28 @@ const CourseUpload = () => {
                 label="Video Description"
                 variant="outlined"
                 margin="normal"
-                multiline
-                rows={2}
                 value={video.description}
                 onChange={(e) =>
-                  handleVideoChange(
-                    weekIndex,
-                    videoIndex,
-                    "description",
-                    e.target.value
-                  )
+                  handleVideoChange(weekIndex, videoIndex, "description", e.target.value)
                 }
               />
               <Button
                 variant="outlined"
-                startIcon={<CloudUploadIcon />}
-                onClick={() => openUploadPopup("thumbnail", weekIndex, videoIndex)}
+                onClick={() => openUploadDialog("thumbnail", weekIndex, videoIndex)}
                 sx={{ marginRight: "10px" }}
               >
                 Upload Thumbnail
               </Button>
               <Button
                 variant="outlined"
-                startIcon={<CloudUploadIcon />}
-                onClick={() => openUploadPopup("video", weekIndex, videoIndex)}
+                onClick={() => openUploadDialog("video", weekIndex, videoIndex)}
                 sx={{ marginRight: "10px" }}
               >
                 Upload Video
               </Button>
               <Button
                 variant="outlined"
-                startIcon={<CloudUploadIcon />}
-                onClick={() => openUploadPopup("resource", weekIndex, videoIndex)}
+                onClick={() => openUploadDialog("resource", weekIndex, videoIndex)}
               >
                 Upload Resource (Optional)
               </Button>
@@ -238,29 +332,40 @@ const CourseUpload = () => {
         </Paper>
       ))}
 
-      {/* Submit Button */}
-      <Button
-        variant="contained"
-        color="success"
-        sx={{ marginTop: "20px" }}
-        onClick={handleSubmit}
-      >
-        Submit Course
-      </Button>
+      {/* Add Week Button */}
+      <Box
+  display="flex"
+  justifyContent="center"
+  alignItems="center"
+  sx={{ marginTop: "20px" }}
+>
+  <Button
+    variant="contained"
+    startIcon={<AddCircleOutlineIcon />}
+    sx={{ marginRight: "10px" }} // Add spacing between buttons
+    onClick={addWeek}
+  >
+    Add Week
+  </Button>
 
-      {/* Drag-and-Drop Dialog */}
+  <Button
+    variant="contained"
+    color="success"
+    onClick={() => console.log("Course Details Submitted:", courseDetails)}
+  >
+    Submit Course
+  </Button>
+</Box>
+
+
+      {/* Upload Dialog */}
       <Dialog
-        open={openUploadDialog}
-        onClose={() => setOpenUploadDialog(false)}
+        open={uploadDialogOpen}
+        onClose={() => setUploadDialogOpen(false)}
         fullWidth
         maxWidth="sm"
       >
-        <DialogTitle>
-          <Typography variant="h6" align="center">
-            Drag and Drop Your File
-          </Typography>
-        </DialogTitle>
-        <Divider />
+        <DialogTitle>Upload File</DialogTitle>
         <DialogContent>
           <Paper
             {...getRootProps()}
@@ -285,12 +390,87 @@ const CourseUpload = () => {
           </Paper>
         </DialogContent>
         <DialogActions>
-          <Button
-            onClick={() => setOpenUploadDialog(false)}
-            variant="outlined"
-            color="secondary"
-          >
+          <Button onClick={() => setUploadDialogOpen(false)} color="secondary">
             Cancel
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Quiz Dialog */}
+      <Dialog
+        open={quizDialogOpen}
+        onClose={() => setQuizDialogOpen(false)}
+        fullWidth
+        maxWidth="sm"
+      >
+        <DialogTitle>Quizzes for Week {currentWeekIndex + 1}</DialogTitle>
+        <DialogContent>
+          {quizzes.map((quiz, index) => (
+            <Paper
+              key={index}
+              sx={{ padding: "15px", marginBottom: "15px", backgroundColor: "#f9f9f9" }}
+            >
+              <TextField
+                fullWidth
+                label="Question"
+                variant="outlined"
+                margin="normal"
+                value={quiz.question}
+                onChange={(e) => handleQuizChange(index, "question", e.target.value)}
+              />
+              {quiz.options.map((option, optionIndex) => (
+                <TextField
+                  fullWidth
+                  key={optionIndex}
+                  label={`Option ${optionIndex + 1}`}
+                  variant="outlined"
+                  margin="normal"
+                  value={option}
+                  onChange={(e) =>
+                    handleQuizChange(index, `option_${optionIndex}`, e.target.value)
+                  }
+                />
+              ))}
+              <Select
+                fullWidth
+                variant="outlined"
+                margin="normal"
+                value={quiz.correctAnswer}
+                onChange={(e) => handleQuizChange(index, "correctAnswer", e.target.value)}
+              >
+                <MenuItem value="" disabled>
+                  Select Correct Answer
+                </MenuItem>
+                {quiz.options.map((option, optionIndex) => (
+                  <MenuItem key={optionIndex} value={option}>
+                    Option {optionIndex + 1}
+                  </MenuItem>
+                ))}
+              </Select>
+              <IconButton
+                color="error"
+                onClick={() => deleteQuestionFromQuiz(index)}
+                title="Delete Question"
+              >
+                <DeleteIcon />
+              </IconButton>
+            </Paper>
+          ))}
+          <Button
+            variant="contained"
+            startIcon={<AddCircleOutlineIcon />}
+            onClick={addQuestionToQuiz}
+            fullWidth
+          >
+            Add Question
+          </Button>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setQuizDialogOpen(false)} color="secondary">
+            Cancel
+          </Button>
+          <Button onClick={saveQuiz} color="primary" variant="contained">
+            Save Quizzes
           </Button>
         </DialogActions>
       </Dialog>
