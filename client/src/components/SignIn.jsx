@@ -26,22 +26,22 @@ const SignIn = () => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
     setError('');
   };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
-
+  
     const { error: validationError } = signInSchema.validate(formData);
     if (validationError) {
       setSnackbar({ open: true, message: validationError.details[0].message, severity: 'error' });
       return;
     }
-
+  
     try {
       // Call the backend API to check the credentials
-      const response = await axios.post('http://localhost:5000/api/auth/signin', formData);
-
-      // Save the token and redirect
-      localStorage.setItem('token', response.data.token);
+      const response = await axios.post('http://localhost:5000/api/auth/signin', formData, {
+        withCredentials: true, // Include cookies with the request
+      });
+  
+      // Redirect on successful login
       setSnackbar({ open: true, message: 'Login successful! Redirecting...', severity: 'success' });
       setTimeout(() => navigate('/dashboard'), 1500);
     } catch (err) {
@@ -49,6 +49,7 @@ const SignIn = () => {
       setSnackbar({ open: true, message: errorMessage, severity: 'error' });
     }
   };
+  
 
   return (
     <div

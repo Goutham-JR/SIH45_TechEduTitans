@@ -24,7 +24,7 @@ npm install @mui/material @emotion/react @emotion/styled
 npm install axios
 npm install @mui/icons-material react-player
 npm install @hello-pangea/dnd
-
+npm install react-dropzone
 
 
 //validation

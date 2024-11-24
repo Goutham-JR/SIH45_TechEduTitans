@@ -6,8 +6,14 @@ import Course from './pages/Course';
 import Home from './pages/Home';
 import Profile from './pages/Profile';
 import CourseUpload from './components/UploadCourse';
+import CertificateGenerator from './components/Certificate';
+import axios from 'axios';
+import Dashboard from './components/Dashboard';
+import Logout from './components/Logout';
+
 
 function App() {
+  axios.defaults.withCredentials = true;
   return (
     <BrowserRouter>
       {/* Define the application routes */}
@@ -21,6 +27,9 @@ function App() {
         <Route path="/signup" element={<SignUp />} />
         <Route path="/course" element={<Course />} />
         <Route path="/courseupload" element={<CourseUpload />} />
+        <Route path="/certificate" element={<CertificateGenerator />} />
+        <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/logout" element={<Logout />} />
       </Routes>
     </BrowserRouter>
   );

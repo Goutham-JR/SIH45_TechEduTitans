@@ -10,15 +10,23 @@ import {
   Menu,
   MenuItem,
   Badge,
+  Dialog,
+  DialogContent,
+  DialogActions,
+  DialogTitle,
 } from "@mui/material";
 import NotificationsIcon from "@mui/icons-material/Notifications";
 import AccountCircleIcon from "@mui/icons-material/AccountCircle";
 import FavoriteIcon from "@mui/icons-material/Favorite";
 import SearchIcon from "@mui/icons-material/Search";
+import SignIn from "./SignIn"; // Replace with your actual SignIn component
+import SignOut from "./SignUp"; // Replace with your actual SignOut component
 
 const AppHeader = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [anchorEl, setAnchorEl] = useState(null);
+  const [signInOpen, setSignInOpen] = useState(false);
+  const [signOutOpen, setSignOutOpen] = useState(false);
 
   // Handle Profile Dropdown
   const handleMenuOpen = (event) => {
@@ -35,130 +43,162 @@ const AppHeader = () => {
   };
 
   return (
-    <AppBar
-      position="fixed"
-      sx={{
-        backgroundColor: "#3f51b5",
-        paddingX: 2,
-        boxShadow: "0px 4px 6px rgba(0,0,0,0.1)",
-      }}
-    >
-      <Toolbar
+    <>
+      <AppBar
+        position="fixed"
         sx={{
-          justifyContent: "space-between",
-          alignItems: "center",
-          flexWrap: "wrap",
-          gap: 2,
+          backgroundColor: "#3f51b5",
+          paddingX: 2,
+          boxShadow: "0px 4px 6px rgba(0,0,0,0.1)",
         }}
       >
-        {/* Left: App Name */}
-        <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-          <Typography
-            variant="h6"
-            sx={{ fontWeight: "bold", color: "white" }}
-          >
-            Student App
-          </Typography>
-        </Box>
-
-        {/* Center: Search Bar */}
-        <Box
+        <Toolbar
           sx={{
-            flex: 1,
-            display: "flex",
+            justifyContent: "space-between",
             alignItems: "center",
-            backgroundColor: "white",
-            borderRadius: "5px",
-            padding: "5px 15px",
-            boxShadow: "0px 2px 5px rgba(0,0,0,0.1)",
-            maxWidth: "600px", // Limits the width for better alignment
-            marginLeft: "auto",
-            marginRight: "auto",
+            flexWrap: "wrap",
+            gap: 2,
           }}
         >
-          <SearchIcon sx={{ color: "gray", marginRight: 1 }} />
-          <InputBase
-            placeholder="Search for courses, videos, or resources..."
-            fullWidth
-            sx={{ fontSize: "1rem" }}
-          />
-        </Box>
+          {/* Left: App Name */}
+          <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+            <Typography
+              variant="h6"
+              sx={{ fontWeight: "bold", color: "white" }}
+            >
+              Student App
+            </Typography>
+          </Box>
 
-        {/* Right: Actions */}
-        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-          {/* Notifications and Wishlist (Only visible when logged in) */}
-          {isLoggedIn && (
-            <>
-              <IconButton color="inherit">
-                <Badge badgeContent={3} color="error">
-                  <NotificationsIcon />
-                </Badge>
-              </IconButton>
-              <IconButton color="inherit">
-                <Badge badgeContent={2} color="error">
-                  <FavoriteIcon />
-                </Badge>
-              </IconButton>
-            </>
-          )}
+          {/* Center: Search Bar */}
+          <Box
+            sx={{
+              flex: 1,
+              display: "flex",
+              alignItems: "center",
+              backgroundColor: "white",
+              borderRadius: "5px",
+              padding: "5px 15px",
+              boxShadow: "0px 2px 5px rgba(0,0,0,0.1)",
+              maxWidth: "600px", // Limits the width for better alignment
+              marginLeft: "auto",
+              marginRight: "auto",
+            }}
+          >
+            <SearchIcon sx={{ color: "gray", marginRight: 1 }} />
+            <InputBase
+              placeholder="Search for courses, videos, or resources..."
+              fullWidth
+              sx={{ fontSize: "1rem" }}
+            />
+          </Box>
 
-          {/* Login/Sign-Up or Profile Dropdown */}
-          {isLoggedIn ? (
-            <>
-              <IconButton
-                color="inherit"
-                onClick={handleMenuOpen}
-                aria-controls="profile-menu"
-                aria-haspopup="true"
-              >
-                <AccountCircleIcon />
-              </IconButton>
-              <Menu
-                id="profile-menu"
-                anchorEl={anchorEl}
-                open={Boolean(anchorEl)}
-                onClose={handleMenuClose}
-                sx={{ mt: 2 }}
-              >
-                <MenuItem onClick={handleMenuClose}>Profile</MenuItem>
-                <MenuItem onClick={handleMenuClose}>Settings</MenuItem>
-                <MenuItem
-                  onClick={() => {
-                    handleLoginLogout();
-                    handleMenuClose();
+          {/* Right: Actions */}
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+            {/* Notifications and Wishlist (Only visible when logged in) */}
+            {isLoggedIn && (
+              <>
+                <IconButton color="inherit">
+                  <Badge badgeContent={3} color="error">
+                    <NotificationsIcon />
+                  </Badge>
+                </IconButton>
+                <IconButton color="inherit">
+                  <Badge badgeContent={2} color="error">
+                    <FavoriteIcon />
+                  </Badge>
+                </IconButton>
+              </>
+            )}
+
+            {/* Login/Sign-Up or Profile Dropdown */}
+            {isLoggedIn ? (
+              <>
+                <IconButton
+                  color="inherit"
+                  onClick={handleMenuOpen}
+                  aria-controls="profile-menu"
+                  aria-haspopup="true"
+                >
+                  <AccountCircleIcon />
+                </IconButton>
+                <Menu
+                  id="profile-menu"
+                  anchorEl={anchorEl}
+                  open={Boolean(anchorEl)}
+                  onClose={handleMenuClose}
+                  sx={{ mt: 2 }}
+                >
+                  <MenuItem onClick={handleMenuClose}>Profile</MenuItem>
+                  <MenuItem onClick={handleMenuClose}>Settings</MenuItem>
+                  <MenuItem
+                    onClick={() => {
+                      setSignOutOpen(true);
+                      handleMenuClose();
+                    }}
+                  >
+                    Logout
+                  </MenuItem>
+                </Menu>
+              </>
+            ) : (
+              <>
+                <Button
+                  variant="outlined"
+                  color="inherit"
+                  onClick={() => setSignInOpen(true)}
+                  sx={{
+                    textTransform: "none",
+                    color: "white",
+                    borderColor: "white",
                   }}
                 >
-                  Logout
-                </MenuItem>
-              </Menu>
-            </>
-          ) : (
-            <>
-              <Button
-                variant="outlined"
-                color="inherit"
-                onClick={handleLoginLogout}
-                sx={{
-                  textTransform: "none",
-                  color: "white",
-                  borderColor: "white",
-                }}
-              >
-                Sign In
-              </Button>
-              <Button
-                variant="contained"
-                color="primary"
-                onClick={handleLoginLogout}
-                sx={{ textTransform: "none", color: "white" }}
-              >
-                Sign Up
-              </Button>
-            </>
-          )}
-        </Box>
-      </Toolbar>
-    </AppBar>
+                  Sign In
+                </Button>
+                <Button
+                  variant="contained"
+                  color="primary"
+                  onClick={() => setSignInOpen(true)}
+                  sx={{ textTransform: "none", color: "white" }}
+                >
+                  Sign Up
+                </Button>
+              </>
+            )}
+          </Box>
+        </Toolbar>
+      </AppBar>
+
+      {/* Sign In Dialog */}
+      <Dialog open={signInOpen} onClose={() => setSignInOpen(false)}>
+        <DialogTitle>Sign In</DialogTitle>
+        <DialogContent>
+          <SignIn />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setSignInOpen(false)}>Close</Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Sign Out Dialog */}
+      <Dialog open={signOutOpen} onClose={() => setSignOutOpen(false)}>
+        <DialogTitle>Are you sure you want to log out?</DialogTitle>
+        <DialogContent>
+          <SignOut />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setSignOutOpen(false)}>Cancel</Button>
+          <Button
+            onClick={() => {
+              handleLoginLogout();
+              setSignOutOpen(false);
+            }}
+          >
+            Logout
+          </Button>
+        </DialogActions>
+      </Dialog>
+    </>
   );
 };
 

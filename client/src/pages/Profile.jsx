@@ -36,7 +36,6 @@ const AvatarOverlay = styled(Box)({
 });
 
 const Profile = () => {
-  // Form state
   const [formData, setFormData] = useState({
     name: "John Doe",
     email: "john.doe@example.com",
@@ -44,7 +43,7 @@ const Profile = () => {
     gender: "Male",
     dob: "1995-08-15",
     phoneno: "+1 234 567 890",
-    profilePic: "https://via.placeholder.com/150", // Replace with actual profile pic URL
+    profilePic: "https://via.placeholder.com/150", 
   });
 
   const handleInputChange = (e) => {
