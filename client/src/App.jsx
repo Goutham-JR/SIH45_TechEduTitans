@@ -5,11 +5,11 @@ import SignUp from './components/SignUp';
 import Course from './pages/Course';
 import Home from './pages/Home';
 import Profile from './pages/Profile';
-import CourseUpload from './components/UploadCourse';
 import CertificateGenerator from './components/Certificate';
 import axios from 'axios';
 import Dashboard from './components/Dashboard';
 import Logout from './components/Logout';
+import CourseUpload from './pages/UploadCourse';
 
 
 function App() {

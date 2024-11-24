@@ -19,22 +19,14 @@ import NotificationsIcon from "@mui/icons-material/Notifications";
 import AccountCircleIcon from "@mui/icons-material/AccountCircle";
 import FavoriteIcon from "@mui/icons-material/Favorite";
 import SearchIcon from "@mui/icons-material/Search";
-<<<<<<< Updated upstream
 import SignIn from "./SignIn"; // Replace with your actual SignIn component
 import SignOut from "./SignUp"; // Replace with your actual SignOut component
-=======
-import SignIn from "./SignIn";
-import SignOut from "./SignUp";
->>>>>>> Stashed changes
 
 const AppHeader = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [anchorEl, setAnchorEl] = useState(null);
   const [signInOpen, setSignInOpen] = useState(false);
   const [signOutOpen, setSignOutOpen] = useState(false);
-
-  const [SignInopen, setSignInOpen] = useState(false);
-  const [SignOutopen, setSignOutopen] = useState(false);
 
   // Handle Profile Dropdown
   const handleMenuOpen = (event) => {
@@ -118,7 +110,6 @@ const AppHeader = () => {
                 </IconButton>
               </>
             )}
-<<<<<<< Updated upstream
 
             {/* Login/Sign-Up or Profile Dropdown */}
             {isLoggedIn ? (
@@ -208,95 +199,6 @@ const AppHeader = () => {
         </DialogActions>
       </Dialog>
     </>
-=======
-            {
-              isLoggedIn?(
-                <>
-                <IconButton color="inherit"
-                onClick={handleMenuOpen} 
-                aria-controls="profile-menu"
-                aria-haspopup="true"
-                >
-              <AccountCircleIcon/>
-                </IconButton>
-              <Menu
-              id="profile:menu"
-              anchorEl={anchorEl}
-              open={Boolean(anchorEl)}
-              onClose={handleMenuClose}
-              sx={{mt:2}}
-
-              >
-                <MenuItem onClick={handleMenuClose}>
-                Profile </MenuItem>
-
-                <MenuItem onClick={handleMenuClose}>
-                Settings </MenuItem>
-
-                <MenuItem onClick={()=>{setSignOutopen(true);
-                handleMenuClose();
-                }}>
-                Logout </MenuItem>
-              </Menu>
-                </>
-              ):(
-              <>
-              <Button
-                variant="outlined"
-                color="inherit"
-                onClick={() => setSignInOpen(true)}
-                sx={{
-                  textTransform: "none",
-                  color: "white",
-                  borderColor: "white",
-                }}
-              >
-                Sign In
-              </Button>
-              <Button
-                variant="contained"
-                color="primary"
-                onClick={() => setSignOutopen(true)}
-                sx={{ textTransform: "none", color: "white" }}
-              >
-                Sign Up
-              </Button>
-            </>
-          )}
-        </Box>
-      </Toolbar>
-    </AppBar>
-    
-          <Dialog open={SignInopen}
-          onClose={()=>setSignInOpen(false)}>
-          <DialogTitle>
-            SignIn
-          </DialogTitle>
-          <DialogContent>
-            <SignIn/>
-          </DialogContent>
-          <DialogActions>
-            <Button onclick={()=>setSignInOpen(false)}>Close</Button>
-          </DialogActions>
-          </Dialog>
-
-          <Dialog open={SignOutopen}
-          onClose={()=>setSignOutopen(false)}>
-          <DialogTitle>
-            Sign Out
-          </DialogTitle>
-          <DialogContent>
-            <SignOut/>
-          </DialogContent>
-          <DialogActions>
-            <Button onclick={()=>setSignOutopen(false)}>Cancel</Button>
-            <Button onClick={()=>{handleLoginLogout(); 
-              setSignOutopen(false);
-            }}>Logout</Button>
-          </DialogActions>
-          </Dialog>
-          </>
->>>>>>> Stashed changes
   );
 };
 
