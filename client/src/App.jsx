@@ -7,7 +7,7 @@ import Course from './pages/Course';
 import Home from './pages/Home';
 import Profile from './pages/Profile';
 import PaymentsPage from './pages/Payments';
-import CourseUpload from './components/UploadCourseParent';
+import CourseUpload from './pages/UploadCourse';
 import AssignmentsPage from './pages/Assignments';
 import CertificateGenerator from './components/Certificate';
 import axios from 'axios';
@@ -31,13 +31,14 @@ function App() {
         {/* Additional routes */}
         <Route path="/home" element={<Home />} />
         <Route path="/profile" element={<Profile />} />
-        <Route path="/profile" element={<AdminDashboard />} />
+        <Route path="/Admindashboard" element={<AdminDashboard />} />
         <Route path="/signin" element={<SignIn />} />
         <Route path="/signup" element={<SignUp />} />
-        <Route path="/course" element={<Course />} />
-        <Route path="/course" element={<PaymentsPage />} />
-        <Route path="/course" element={<AssignmentsPage />} />
-        <Route path="/course" element={<ResultsAndProgressPage />} />
+        <Route path="/coursepload" element={<CourseUpload />} />
+        <Route path="/coursevideo" element={<Course />} />
+        <Route path="/payment" element={<PaymentsPage />} />
+        <Route path="/assignment" element={<AssignmentsPage />} />
+        <Route path="/result" element={<ResultsAndProgressPage />} />
         <Route path="/courseupload" element={<CourseUpload />} />
         <Route path="/home" element={<QuizPage />} />
         <Route path="/leaderboard" element={<LeaderboardPage />} />
