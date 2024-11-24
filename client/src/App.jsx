@@ -6,25 +6,18 @@ import AdminDashboard from './pages/AdminDashboard';
 import Course from './pages/Course';
 import Home from './pages/Home';
 import Profile from './pages/Profile';
-<<<<<<< Updated upstream
-=======
 import PaymentsPage from './pages/Payments';
-import CourseUpload from './components/UploadCourse';
+import CourseUpload from './components/UploadCourseParent';
 import AssignmentsPage from './pages/Assignments';
->>>>>>> Stashed changes
 import CertificateGenerator from './components/Certificate';
 import axios from 'axios';
 import Dashboard from './components/Dashboard';
 import ResultsAndProgressPage from './pages/ResultsProgress';
 import Logout from './components/Logout';
-<<<<<<< Updated upstream
-import CourseUpload from './pages/UploadCourse';
-=======
 import QuizPage from './pages/QuizPage';
 import LeaderboardPage from './pages/LeaderBoard';
 import BadgesAndAchievementsPage from './pages/BadgeAchivements';
 import SupportPage from './pages/SupportHelp';
->>>>>>> Stashed changes
 
 
 function App() {
@@ -34,7 +27,7 @@ function App() {
       {/* Define the application routes */}
       <Routes>
         {/* Root path "/" will render the Home page */}
-        <Route path="/" element={<SupportPage />} />
+        <Route path="/" element={<Home />} />
         {/* Additional routes */}
         <Route path="/home" element={<Home />} />
         <Route path="/profile" element={<Profile />} />
@@ -47,8 +40,8 @@ function App() {
         <Route path="/course" element={<ResultsAndProgressPage />} />
         <Route path="/courseupload" element={<CourseUpload />} />
         <Route path="/home" element={<QuizPage />} />
-        <Route path="/certificate" element={<LeaderboardPage />} />
-        <Route path="/certificate" element={<BadgesAndAchievementsPage />} />
+        <Route path="/leaderboard" element={<LeaderboardPage />} />
+        <Route path="/badges" element={<BadgesAndAchievementsPage />} />
         <Route path="/certificate" element={<CertificateGenerator />} />
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/dashboard" element={<SupportPage />} />
