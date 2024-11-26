@@ -1,7 +1,5 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import SignIn from './components/SignIn';
-import SignUp from './components/SignUp';
 import AdminDashboard from './pages/AdminDashboard';
 import Course from './pages/Course';
 import Home from './pages/Home';
@@ -18,6 +16,7 @@ import QuizPage from './pages/QuizPage';
 import LeaderboardPage from './pages/LeaderBoard';
 import BadgesAndAchievementsPage from './pages/BadgeAchivements';
 import SupportPage from './pages/SupportHelp';
+import Testing from './components/Testing'
 
 
 function App() {
@@ -27,13 +26,11 @@ function App() {
       {/* Define the application routes */}
       <Routes>
         {/* Root path "/" will render the Home page */}
-        <Route path="/" element={<Home />} />
+        <Route path="/" element={<Testing />} />
         {/* Additional routes */}
         <Route path="/home" element={<Home />} />
         <Route path="/profile" element={<Profile />} />
         <Route path="/Admindashboard" element={<AdminDashboard />} />
-        <Route path="/signin" element={<SignIn />} />
-        <Route path="/signup" element={<SignUp />} />
         <Route path="/coursepload" element={<CourseUpload />} />
         <Route path="/coursevideo" element={<Course />} />
         <Route path="/payment" element={<PaymentsPage />} />

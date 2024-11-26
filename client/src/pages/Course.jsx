@@ -28,13 +28,10 @@ function Course() {
       {/* Header Section */}
       <Box
         sx={{
-          flexShrink: 0,
-          backgroundColor: '#3f51b5',
-          color: 'white',
-          padding: 2,
+          flexShrink: 0,   
         }}
       >
-        <Header video={currentVideo} />
+        <Header />
       </Box>
 
       {/* Content Section */}
