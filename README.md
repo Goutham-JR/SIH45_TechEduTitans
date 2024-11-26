@@ -29,3 +29,6 @@ npm install react-dropzone jspdf html2canvas
 
 //validation
 npm install joi
+
+//GFS
+npm install express mongoose multer gridfs-stream
