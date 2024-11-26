@@ -23,7 +23,7 @@ const Dashboard = () => {
       } catch (err) {
         console.error('Error:', err.response?.data?.error || err.message);
         setError('Session expired or unauthorized. Redirecting to login...');
-        setTimeout(() => navigate('/signin'), 2000); 
+        setTimeout(() => navigate('/'), 2000); 
       }
     };
 

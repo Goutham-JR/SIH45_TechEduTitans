@@ -6,35 +6,44 @@ const nodemailer = require("nodemailer");
 
 
 // Joi schemas for validation
+
+// Joi schema for SignUp validation
 const signUpSchema = Joi.object({
-  name: Joi.string()
-    .regex(/^[a-zA-Z\s]+$/) // Allows only alphabets and spaces
-    .min(3)
-    .max(30)
-    .required()
-    .messages({
-      'string.empty': 'Name is required.',
-      'string.min': 'Name must be at least 3 characters.',
-      'string.max': 'Name must not exceed 30 characters.',
-      'string.pattern.base': 'Name should only contain letters and spaces.',
-    }),
-
-  email: Joi.string()
-    .email()
-    .required()
-    .messages({
-      'string.empty': 'Email is required.',
-      'string.email': 'Please enter a valid email address.',
-    }),
-
+  name: Joi.string().min(3).max(30).pattern(/^[a-zA-Z\s]+$/).required().messages({
+    'string.base': 'Name must be a string.',
+    'string.empty': 'Name is required.',
+    'string.min': 'Name must be at least 3 characters.',
+    'string.max': 'Name cannot exceed 30 characters.',
+    'string.pattern.base': 'Name must only contain alphabets.',
+  }),
+  email: Joi.string().email({ tlds: { allow: false } }).required().messages({
+    'string.empty': 'Email is required.',
+    'string.email': 'Please enter a valid email.',
+  }),
   password: Joi.string()
-    .pattern(new RegExp('^(?=.*[a-zA-Z])(?=.*[0-9])(?=.*[!@#$%^&*])[A-Za-z0-9!@#$%^&*]{8,}$')) // 8 chars, alphanumeric, special char
+    .pattern(new RegExp('^(?=.*[a-zA-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]{8,}$'))
     .required()
     .messages({
       'string.empty': 'Password is required.',
-      'string.pattern.base': 'Password must be at least 8 characters, alphanumeric, and include at least one special character.',
+      'string.pattern.base':
+        'Password must be at least 8 characters, include alphanumeric characters, and at least one special character.',
     }),
-});
+  confirmPassword: Joi.string()
+    .valid(Joi.ref('password'))
+    .required()
+    .messages({
+      'any.only': 'Passwords must match.',
+      'string.empty': 'Confirm Password is required.',
+    }),
+  phoneNumber: Joi.string()
+    .pattern(/^\d{10}$/)
+    .required()
+    .messages({
+      'string.empty': 'Phone Number is required.',
+      'string.pattern.base': 'Phone Number must be exactly 10 digits.',
+    }),
+}).with('password', 'confirmPassword'); // This ensures both password and confirmPassword are used together
+
 
 const signInSchema = Joi.object({
   email: Joi.string()
@@ -58,8 +67,9 @@ exports.signUp = async (req, res) => {
     // Validate input
     const { error } = signUpSchema.validate(req.body);
     if (error) return res.status(400).json({ error: error.details[0].message });
+    console.log('Request Body:', req.body);
 
-    const { name, email, password } = req.body;
+    const { name, email, password, confirmPassword, phoneNumber } = req.body;
 
     // Check if the user already exists
     const userExists = await User.findOne({ email });
@@ -73,7 +83,7 @@ exports.signUp = async (req, res) => {
     const hashedPassword = await bcrypt.hash(password, salt);
 
     // Save the new user
-    const newUser = new User({ name, email, password: hashedPassword });
+    const newUser = new User({ name, email, password: hashedPassword, phoneNumber });
     await newUser.save();
 
     res.status(201).json({ message: 'User registered successfully!' });
