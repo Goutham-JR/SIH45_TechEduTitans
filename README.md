@@ -32,3 +32,6 @@ npm install joi
 
 //GFS
 npm install express mongoose multer gridfs-stream
+
+//node mailer
+npm install nodemailer

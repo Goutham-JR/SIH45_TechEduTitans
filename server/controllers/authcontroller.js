@@ -2,6 +2,8 @@ const User = require('../models/user');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const Joi = require('joi');
+const nodemailer = require("nodemailer");
+
 
 // Joi schemas for validation
 const signUpSchema = Joi.object({
@@ -123,4 +125,92 @@ exports.signIn = async (req, res) => {
 exports.logout = (req, res) => {
   res.clearCookie('token'); // Clear the token cookie
   res.status(200).json({ message: 'Logged out successfully!' });
+};
+
+// Define validation schema for the email input
+const emailSchema = Joi.object({
+  email: Joi.string().email().required(),
+});
+
+// Configure nodemailer for SMTP
+const transporter = nodemailer.createTransport({
+  host: 'smtp.gmail.com',
+  port: 465,
+  secure: true,
+  auth: {
+      user: 'teachedu2024@gmail.com',
+      pass: 'mfly lzzp vthg crzi'
+  }
+});
+
+
+exports.forgotpassword = async (req, res) => {
+  try {
+    const { email, otp, password } = req.body;
+
+    // Email Validation Schema
+    const emailSchema = Joi.string().email({ tlds: { allow: false } }).required();
+    const { error: emailError } = emailSchema.validate(email);
+    if (emailError) return res.status(400).json({ error: "Invalid email address." });
+
+    // Password Validation Schema
+    const passwordSchema = Joi.string()
+      .min(8)
+      .pattern(new RegExp("^(?=.*[!@#$%^&*])"))
+      .required();
+    if (password) {
+      const { error: passwordError } = passwordSchema.validate(password);
+      if (passwordError) {
+        return res.status(400).json({
+          error: "Password must be at least 8 characters and contain at least one special character.",
+        });
+      }
+    }
+
+    // Find user
+    const user = await User.findOne({ email });
+    if (!user) return res.status(404).json({ error: "User not found." });
+
+    // If OTP is provided, verify OTP
+    if (otp) {
+      if (user.resetOtp !== otp || Date.now() > user.resetOtpExpires) {
+        return res.status(400).json({ error: "Invalid OTP." });
+      }
+
+      // Hash the new password
+      const saltRounds = 10; // Adjust as needed
+      const salt = await bcrypt.genSalt(saltRounds);
+      const hashedPassword = await bcrypt.hash(password, salt);
+
+      // Update user's password and clear OTP fields
+      user.password = hashedPassword;
+      user.resetOtp = undefined;
+      user.resetOtpExpires = undefined;
+      await user.save();
+
+      return res.status(200).json({ message: "Password reset successfully." });
+    }
+
+    // Generate OTP for the first step
+    const otpGenerated = Math.floor(1000 + Math.random() * 9000).toString();
+    const otpExpires = Date.now() + 10 * 60 * 1000; // OTP valid for 10 minutes
+
+    // Update user with OTP and expiration
+    user.resetOtp = otpGenerated;
+    user.resetOtpExpires = otpExpires;
+    await user.save();
+
+    // Send OTP via email
+    await transporter.sendMail({
+      from: "teachedu2024@gmail.com",
+      to: email,
+      subject: "Password Reset OTP",
+      text: `Hello,\n\nYour OTP for resetting your password is: ${otpGenerated}\n\nThis OTP is valid for 10 minutes.`,
+    });
+
+    return res.status(200).json({ message: "OTP sent to your email." });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "An error occurred while processing your request." });
+  }
 };

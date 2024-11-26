@@ -20,12 +20,18 @@ app.use(
 );
 app.use(cookieParser());
 app.use(express.json());
+app.use(express.json()); // Parse JSON bodies
+app.use(express.urlencoded({ extended: true })); // Parse URL-encoded bodies
+
 
 // Register routes
 app.use('/api/auth', authRoutes); // Authentication routes
 app.use('/api/protected', protectedRoutes);
-
 app.use('/api/courses', coursesRoutes); // Register the courses routes
+app.use((req, res, next) => {
+  console.log(`Received ${req.method} request for ${req.url}`);
+  next();
+});
 
 
 
