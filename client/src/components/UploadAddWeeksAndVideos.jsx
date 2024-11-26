@@ -6,6 +6,8 @@ import {
   Typography,
   IconButton,
   Modal,
+  Snackbar,
+  Alert,
 } from "@mui/material";
 import { AddCircleOutline, RemoveCircleOutline } from "@mui/icons-material";
 import { useDropzone } from "react-dropzone";
@@ -18,6 +20,8 @@ const AddWeeksAndVideos = ({ onBack, onNext, initialData }) => {
     videoIndex: null,
     field: null,
   });
+  const [error, setError] = useState("");
+  const [snackbarOpen, setSnackbarOpen] = useState(false);
 
   useEffect(() => {
     if (initialData) {
@@ -79,11 +83,71 @@ const AddWeeksAndVideos = ({ onBack, onNext, initialData }) => {
       "image/*": [".png", ".jpg", ".jpeg"],
       "video/*": [".mp4", ".mkv", ".avi"],
       "application/pdf": [".pdf"],
+      "application/msword": [".doc", ".docx"],
     },
   });
 
+  const validateFields = () => {
+    let validationError = "";
+
+    // Ensure there are at least 3 weeks
+    if (weeks.length < 2) {
+      validationError = "You must add at least 2 weeks.";
+    }
+
+    // Ensure at least one week has at least 3 videos
+    const weekWithAtLeastThreeVideos = weeks.some((week) => week.videos.length >= 1);
+    if (!weekWithAtLeastThreeVideos) {
+      validationError = "At least one week must have 1 videos.";
+    }
+
+    for (let i = 0; i < weeks.length; i++) {
+      const week = weeks[i];
+
+      // Validate each video in the week
+      for (let j = 0; j < week.videos.length; j++) {
+        const video = week.videos[j];
+
+        // Validate Title (must not be empty and contain only characters)
+        if (!video.title) {
+          validationError = `Video title in Week ${i + 1}, Video ${j + 1} cannot be empty.`;
+        } else if (/\d/.test(video.title)) {
+          validationError = `Video title in Week ${i + 1}, Video ${j + 1} cannot contain numbers.`;
+        }
+
+        // Validate Description (must not be empty and contain only characters)
+        if (!video.description) {
+          validationError = `Video description in Week ${i + 1}, Video ${j + 1} cannot be empty.`;
+        } else if (/\d/.test(video.description)) {
+          validationError = `Video description in Week ${i + 1}, Video ${j + 1} cannot contain numbers.`;
+        }
+
+        // File validations
+        if (!video.thumbnail || !video.thumbnail.type.startsWith("image")) {
+          validationError = `Thumbnail in Week ${i + 1}, Video ${j + 1} must be an image.`;
+        }
+        if (!video.video || !video.video.type.startsWith("video")) {
+          validationError = `Video in Week ${i + 1}, Video ${j + 1} must be a video file.`;
+        }
+        if (video.resource && !["application/pdf", "application/msword"].includes(video.resource.type)) {
+          validationError = `Resource in Week ${i + 1}, Video ${j + 1} must be a PDF or Word file.`;
+        }
+      }
+    }
+
+    if (validationError) {
+      setError(validationError);
+      setSnackbarOpen(true);
+      return false;
+    }
+
+    return true;
+  };
+
   const handleNext = () => {
-    onNext({ weeks });
+    if (validateFields()) {
+      onNext({ weeks });
+    }
   };
 
   return (
@@ -187,6 +251,18 @@ const AddWeeksAndVideos = ({ onBack, onNext, initialData }) => {
         </Button>
       </Box>
 
+      {/* Snackbar for Error Messages */}
+      <Snackbar
+        open={snackbarOpen}
+        autoHideDuration={6000}
+        onClose={() => setSnackbarOpen(false)}
+      >
+        <Alert severity="error" onClose={() => setSnackbarOpen(false)}>
+          {error}
+        </Alert>
+      </Snackbar>
+
+      {/* Modal for Dropzone */}
       <Modal
         open={showDropzone}
         onClose={() => setShowDropzone(false)}

@@ -5,12 +5,50 @@ import {
   Box,
   Typography,
   IconButton,
+  Snackbar,
+  Alert,
 } from "@mui/material";
 import { AddCircleOutline, RemoveCircleOutline } from "@mui/icons-material";
+import Joi from "joi";
 
 const LearnAndRequirements = ({ onBack, onNext, initialData }) => {
-  const [learnPoints, setLearnPoints] = useState(initialData.learnPoints || [""]);
-  const [requirements, setRequirements] = useState(initialData.requirements || [""]);
+  const [learnPoints, setLearnPoints] = useState(initialData.learnPoints || ["", ""]);
+  const [requirements, setRequirements] = useState(initialData.requirements || ["", ""]);
+  const [error, setError] = useState("");
+  const [snackbarOpen, setSnackbarOpen] = useState(false);
+
+  // Joi Schema for Validation
+  const schema = Joi.object({
+    learnPoints: Joi.array()
+      .min(2) // Ensure at least 2 points
+      .items(
+        Joi.string()
+          .min(1)
+          .required()
+          .regex(/^[^\d]+$/, "No numbers allowed") // No numbers allowed
+      )
+      .required()
+      .messages({
+        "array.min": "You must provide at least two LearnPoints.",
+        "string.empty": "LearnPoints cannot be empty.",
+        "string.pattern.base": "LearnPoints cannot have numbers.",
+      }),
+
+    requirements: Joi.array()
+      .min(2) // Ensure at least 2 requirements
+      .items(
+        Joi.string()
+          .min(1)
+          .required()
+          .regex(/^[^\d]+$/, "No numbers allowed") // No numbers allowed
+      )
+      .required()
+      .messages({
+        "array.min": "You must provide at least two Requirements.",
+        "string.empty": "Requirements cannot be empty.",
+        "string.pattern.base": "Requirements cannot have numbers.",
+      }),
+  });
 
   const handleAddPoint = (setter, points) => {
     setter([...points, ""]);
@@ -28,10 +66,19 @@ const LearnAndRequirements = ({ onBack, onNext, initialData }) => {
   };
 
   const handleNext = () => {
-    if (!learnPoints.length || !requirements.length) {
-      alert("Please add at least one point in both sections.");
+    const result = schema.validate(
+      { learnPoints, requirements },
+      { abortEarly: false }
+    );
+
+    if (result.error) {
+      const errors = result.error.details.map((err) => err.message);
+
+      setError([...new Set(errors)].join(", ")); // Remove duplicate messages
+      setSnackbarOpen(true);
       return;
     }
+
     onNext({ learnPoints, requirements });
   };
 
@@ -131,6 +178,22 @@ const LearnAndRequirements = ({ onBack, onNext, initialData }) => {
           Next
         </Button>
       </Box>
+
+      {/* Snackbar for Error Messages */}
+      <Snackbar
+        open={snackbarOpen}
+        autoHideDuration={4000}
+        onClose={() => setSnackbarOpen(false)}
+        anchorOrigin={{ vertical: "top", horizontal: "center" }}
+      >
+        <Alert
+          onClose={() => setSnackbarOpen(false)}
+          severity="error"
+          sx={{ width: "100%" }}
+        >
+          {error}
+        </Alert>
+      </Snackbar>
     </Box>
   );
 };

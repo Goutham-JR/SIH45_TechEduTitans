@@ -1,14 +1,27 @@
-const mongoose = require('mongoose')
+const mongoose = require('mongoose');
+const Grid = require('gridfs-stream');
 
-const connectDB = async() => {
-    try{
-        const conn = await mongoose.connect('mongodb://localhost:27017/ELearning')
-        console.log('MongoDB Connected');
-    }catch(err)
-    {
-        console.errror(`Error: ${err.message}`);
-        process.exit(1);
-    }
+let gfs, gridfsBucket;
+
+const connectDB = async () => {
+  try {
+    await mongoose.connect('mongodb://localhost:27017/ELearning', {
+      
+    });
+
+    const connection = mongoose.connection;
+    connection.once('open', () => {
+      gridfsBucket = new mongoose.mongo.GridFSBucket(connection.db, {
+        bucketName: 'uploads',
+      });
+      gfs = Grid(connection.db, mongoose.mongo);
+      gfs.collection('uploads');
+      console.log('MongoDB Connected and GridFS Initialized');
+    });
+  } catch (err) {
+    console.error('MongoDB connection error:', err);
+    process.exit(1);
+  }
 };
 
-module.exports = connectDB;
+module.exports = { connectDB, gfs, gridfsBucket };

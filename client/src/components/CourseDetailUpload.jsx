@@ -1,12 +1,24 @@
 import React, { useState } from "react";
-import { TextField, Button, Box, Typography, Modal, Paper } from "@mui/material";
+import {
+  TextField,
+  Button,
+  Box,
+  Typography,
+  Modal,
+  Paper,
+  Snackbar,
+  Alert,
+} from "@mui/material";
 import { useDropzone } from "react-dropzone";
+import Joi from "joi";
 
 const CourseUpload = ({ onNext }) => {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [showModal, setShowModal] = useState(false);
   const [trailer, setTrailer] = useState(null);
+  const [error, setError] = useState("");
+  const [snackbarOpen, setSnackbarOpen] = useState(false);
 
   const onDrop = (acceptedFiles) => {
     if (acceptedFiles.length > 0) {
@@ -20,11 +32,62 @@ const CourseUpload = ({ onNext }) => {
     maxSize: 100 * 1024 * 1024, // Limit to 100MB
   });
 
+  // Joi Schema for Validation
+  const schema = Joi.object({
+    title: Joi.string()
+      .min(3)
+      .max(100)
+      .regex(/^\D/, "not a number") // Regex to ensure it doesn't start with a number
+      .required()
+      .messages({
+        "string.empty": "Course title is required",
+        "string.min": "Course title must be at least 3 characters long",
+        "string.max": "Course title must not exceed 100 characters",
+        "string.pattern.name": "Course title cannot be a number",
+      }),
+    description: Joi.string()
+      .min(10)
+      .required()
+      .custom((value, helpers) => {
+        if (/^\d/.test(value)) {
+          return helpers.error("string.startsWithNumber");
+        }
+        return value;
+      }, "Custom Validation")
+      .messages({
+        "string.empty": "Course description is required",
+        "string.min": "Course description must be at least 10 characters long",
+        "string.startsWithNumber": "Course description cannot start with a number",
+      }),
+    trailer: Joi.object()
+      .required()
+      .messages({
+        "any.required": "Preview is required",
+      })
+      .custom((value, helpers) => {
+        if (!value || !value.type.startsWith("video/")) {
+          return helpers.error("file.type");
+        }
+        return value;
+      }, "File Type Validation")
+      .messages({
+        "file.type": "Uploaded file must be a video",
+      }),
+  });
+
+  // Handle Validation and Next Button
   const handleNext = () => {
-    if (!title || !description || !trailer) {
-      alert("Please fill all fields and upload a trailer.");
+    const result = schema.validate(
+      { title, description, trailer },
+      { abortEarly: false }
+    );
+
+    if (result.error) {
+      setError(result.error.details.map((err) => err.message).join(", "));
+      setSnackbarOpen(true);
       return;
     }
+
     onNext({ title, description, trailer });
   };
 
@@ -109,7 +172,7 @@ const CourseUpload = ({ onNext }) => {
           }}
         >
           <Typography id="modal-title" variant="h6" align="center" gutterBottom>
-            Upload Trailer
+            Upload Preview
           </Typography>
           <Box
             {...getRootProps()}
@@ -158,6 +221,22 @@ const CourseUpload = ({ onNext }) => {
           </Box>
         </Box>
       </Modal>
+
+      {/* Snackbar for Error Messages */}
+      <Snackbar
+        open={snackbarOpen}
+        autoHideDuration={4000}
+        onClose={() => setSnackbarOpen(false)}
+        anchorOrigin={{ vertical: "top", horizontal: "center" }}
+      >
+        <Alert
+          onClose={() => setSnackbarOpen(false)}
+          severity="error"
+          sx={{ width: "100%" }}
+        >
+          {error}
+        </Alert>
+      </Snackbar>
     </Paper>
   );
 };

@@ -7,42 +7,43 @@ import {
   IconButton,
   Select,
   MenuItem,
+  Snackbar,
+  Alert,
 } from "@mui/material";
 import { AddCircleOutline, RemoveCircleOutline } from "@mui/icons-material";
 
-const AddQuizzes = ({ onBack, onNext, initialData }) => {
-  const [quizzes, setQuizzes] = useState(initialData || [{ questions: [], time: 0 }]);
+const AddQuizzes = ({ onBack, onNext, initialData, totalWeeks }) => {
+  const [quizzes, setQuizzes] = useState(
+    initialData || Array.from({ length: totalWeeks }, () => ({ questions: [], time: 0 }))
+  );
+  const [error, setError] = useState("");
+  const [snackbarOpen, setSnackbarOpen] = useState(false);
 
-  // Synchronize state with initial data when navigating back
   useEffect(() => {
     if (initialData) {
       setQuizzes(initialData);
     }
   }, [initialData]);
 
-  // Add a new quiz
   const addQuiz = () => {
     setQuizzes([...quizzes, { questions: [], time: 0 }]);
   };
 
-  // Remove a quiz
   const removeQuiz = (index) => {
     setQuizzes(quizzes.filter((_, i) => i !== index));
   };
 
-  // Add a new question to a quiz
   const addQuestion = (quizIndex) => {
     const updatedQuizzes = [...quizzes];
     updatedQuizzes[quizIndex].questions.push({
       question: "",
-      choices: ["", "", "", ""], // Default 4 choices
+      choices: ["", "", "", ""],
       correctAnswer: "",
-      points: 1, // Default points per question
+      points: 1,
     });
     setQuizzes(updatedQuizzes);
   };
 
-  // Remove a question from a quiz
   const removeQuestion = (quizIndex, questionIndex) => {
     const updatedQuizzes = [...quizzes];
     updatedQuizzes[quizIndex].questions = updatedQuizzes[quizIndex].questions.filter(
@@ -51,30 +52,30 @@ const AddQuizzes = ({ onBack, onNext, initialData }) => {
     setQuizzes(updatedQuizzes);
   };
 
-  // Handle input changes for question fields
   const handleQuestionChange = (quizIndex, questionIndex, field, value) => {
     const updatedQuizzes = [...quizzes];
     updatedQuizzes[quizIndex].questions[questionIndex][field] = value;
     setQuizzes(updatedQuizzes);
   };
 
-  // Handle choice changes for questions
   const handleChoiceChange = (quizIndex, questionIndex, choiceIndex, value) => {
     const updatedQuizzes = [...quizzes];
     updatedQuizzes[quizIndex].questions[questionIndex].choices[choiceIndex] = value;
     setQuizzes(updatedQuizzes);
   };
 
-  // Handle quiz time input
   const handleQuizTimeChange = (quizIndex, value) => {
-    const updatedQuizzes = [...quizzes];
-    updatedQuizzes[quizIndex].time = value;
-    setQuizzes(updatedQuizzes);
+    // Ensure value is a number and valid for quiz time
+    if (!isNaN(value) && value >= 1) {
+      const updatedQuizzes = [...quizzes];
+      updatedQuizzes[quizIndex].time = value;
+      setQuizzes(updatedQuizzes);
+    }
   };
 
   const handleNext = () => {
     console.log("Quizzes Data:", quizzes);
-    onNext({ quizzes }); // Pass quizzes data to the next step
+    onNext({ quizzes });
   };
 
   return (
@@ -106,7 +107,6 @@ const AddQuizzes = ({ onBack, onNext, initialData }) => {
             Quiz for Week {quizIndex + 1}
           </Typography>
 
-          {/* Quiz Time */}
           <TextField
             label="Quiz Time (minutes)"
             variant="outlined"
@@ -115,9 +115,9 @@ const AddQuizzes = ({ onBack, onNext, initialData }) => {
             value={quiz.time}
             onChange={(e) => handleQuizTimeChange(quizIndex, e.target.value)}
             sx={{ marginBottom: "20px" }}
+            inputProps={{ min: 1, step: 1 }}
           />
 
-          {/* Questions */}
           {quiz.questions.map((question, questionIndex) => (
             <Box
               key={questionIndex}
@@ -132,7 +132,6 @@ const AddQuizzes = ({ onBack, onNext, initialData }) => {
                 Question {questionIndex + 1}
               </Typography>
 
-              {/* Question Text */}
               <TextField
                 label="Question Text"
                 variant="outlined"
@@ -144,7 +143,6 @@ const AddQuizzes = ({ onBack, onNext, initialData }) => {
                 sx={{ marginBottom: "10px" }}
               />
 
-              {/* Choices */}
               {question.choices.map((choice, choiceIndex) => (
                 <TextField
                   key={choiceIndex}
@@ -164,7 +162,6 @@ const AddQuizzes = ({ onBack, onNext, initialData }) => {
                 />
               ))}
 
-              {/* Correct Answer */}
               <Select
                 fullWidth
                 value={question.correctAnswer}
@@ -189,7 +186,6 @@ const AddQuizzes = ({ onBack, onNext, initialData }) => {
                 ))}
               </Select>
 
-              {/* Remove Question Button */}
               <IconButton
                 color="error"
                 onClick={() => removeQuestion(quizIndex, questionIndex)}
@@ -199,7 +195,6 @@ const AddQuizzes = ({ onBack, onNext, initialData }) => {
             </Box>
           ))}
 
-          {/* Add Question Button */}
           <Button
             variant="outlined"
             color="primary"
@@ -208,18 +203,9 @@ const AddQuizzes = ({ onBack, onNext, initialData }) => {
           >
             Add Question
           </Button>
-          {/* Remove Quiz Button */}
-          <IconButton
-            color="error"
-            onClick={() => removeQuiz(quizIndex)}
-            sx={{ marginLeft: "20px" }}
-          >
-            <RemoveCircleOutline />
-          </IconButton>
         </Box>
       ))}
 
-      {/* Add Quiz Button */}
       <Button
         variant="contained"
         color="primary"
@@ -230,15 +216,24 @@ const AddQuizzes = ({ onBack, onNext, initialData }) => {
         Add Quiz for New Week
       </Button>
 
-      {/* Navigation Buttons */}
       <Box sx={{ display: "flex", justifyContent: "space-between" }}>
         <Button variant="outlined" onClick={onBack}>
           Back
         </Button>
-        <Button variant="contained" color="success" onClick={handleNext}>
+        <Button variant="contained" onClick={handleNext}>
           Next
         </Button>
       </Box>
+
+      <Snackbar
+        open={snackbarOpen}
+        autoHideDuration={6000}
+        onClose={() => setSnackbarOpen(false)}
+      >
+        <Alert severity="error" onClose={() => setSnackbarOpen(false)}>
+          {error}
+        </Alert>
+      </Snackbar>
     </Box>
   );
 };
