@@ -56,7 +56,7 @@ const FinalReview = ({ data, onBack, onSubmit }) => {
         console.log(`${key}:`, value);
       }
       // Send data to the backend via POST request
-      const response = await axios.post("http://localhost:5000/api/courses/create", formData, {
+      const response = await axios.post("http://localhost:5000/api/courses/create", {formData}, {
         headers: {
           "Content-Type": "multipart/form-data",
         },

@@ -16,6 +16,8 @@ import QuizPage from './pages/QuizPage';
 import LeaderboardPage from './pages/LeaderBoard';
 import BadgesAndAchievementsPage from './pages/BadgeAchivements';
 import SupportPage from './pages/SupportHelp';
+import Testing from './components/Testing';
+import ForgotPassword from './components/ForgotPassword';
 
 
 function App() {

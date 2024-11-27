@@ -115,7 +115,6 @@ const Header = () => {
       } catch (err) {
         setUser(null);
         setIsLogged(false);
-        setTimeout(() => navigate("/"), 2000);
       }
     };
 
