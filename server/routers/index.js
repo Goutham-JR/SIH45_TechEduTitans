@@ -4,7 +4,6 @@ const cookieParser = require('cookie-parser');
 const protectedRoutes = require('../routers/protected'); // Import the protected routes
 const authRoutes = require('../routers/auth'); // Import auth routes
 const { connectDB } = require('../config/db'); // Correct way if exported as an object
-const coursesRoutes = require('../routers/courseRoutes'); // Path to your courses router
 
 
 
@@ -27,7 +26,6 @@ app.use(express.urlencoded({ extended: true })); // Parse URL-encoded bodies
 // Register routes
 app.use('/api/auth', authRoutes); // Authentication routes
 app.use('/api/protected', protectedRoutes);
-app.use('/api/courses', coursesRoutes); // Register the courses routes
 app.use((req, res, next) => {
   console.log(`Received ${req.method} request for ${req.url}`);
   next();

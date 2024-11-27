@@ -51,6 +51,10 @@ const FinalReview = ({ data, onBack, onSubmit }) => {
         });
       });
 
+      console.log("Logging FormData:");
+      for (let [key, value] of formData.entries()) {
+        console.log(`${key}:`, value);
+      }
       // Send data to the backend via POST request
       const response = await axios.post("http://localhost:5000/api/courses/create", formData, {
         headers: {
