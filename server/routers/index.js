@@ -5,6 +5,8 @@ const protectedRoutes = require('../routers/protected'); // Import the protected
 const authRoutes = require('../routers/auth');
 const courseRoutes = require('../routers/courserouters'); // Import auth routes
 const { connectDB } = require('../config/db'); // Correct way if exported as an object
+const completedCourseRouter = require("../routers/completedCourseRouter");
+
 
 
 
@@ -32,6 +34,8 @@ app.use(bodyParser.urlencoded({ extended: true }));  // For URL-encoded bodies
 app.use('/api/auth', authRoutes); // Authentication routes
 app.use('/api/protected', protectedRoutes);
 app.use('/api/courses', courseRoutes);
+app.use("/api/completed-courses", completedCourseRouter);
+
 app.use((req, res, next) => {
   console.log(`Received ${req.method} request for ${req.url}`);
   next();
