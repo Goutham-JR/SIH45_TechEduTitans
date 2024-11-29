@@ -1,70 +1,41 @@
-import React, { useState } from "react";
-import axios from "axios";
-import { Document, Page } from "react-pdf";
+import React, { useState, useEffect } from "react";
 
-const FileViewer = () => {
-  const [fileType, setFileType] = useState("");
-  const [fileUrl, setFileUrl] = useState("");
-  const [fileId, setFileId] = useState("");
+const ViewResource = () => {
+  const [videoUrl, setVideoUrl] = useState("");
+  const [thumbnailUrl, setThumbnailUrl] = useState("");
+  const [resourceUrl, setResourceUrl] = useState("");
+  useEffect(() => {
+    // Set the URL of the video and thumbnail file dynamically
+    const videoFileId = "6749ffc46ee760c4214bffb2"; // Replace with the actual ObjectId for the video
+    const thumbnailFileId = "674a07d2e63c9fee61295d23"; // Replace with the actual ObjectId for the thumbnail
+    const resourceFileId = "674a07d2e63c9fee61295d25"; // Replace with the actual ObjectId for the thumbnail
+    const videoPath = `http://localhost:5000/api/course/media/${videoFileId}`;
+    const thumbnailPath = `http://localhost:5000/api/course/media/${thumbnailFileId}`;
+    const resourceUrl = `http://localhost:5000/api/course/media/${resourceFileId}`;
 
-  const handleFetchFile = async () => {
-    try {
-      if (!fileId) {
-        alert("Please provide a valid file ID.");
-        return;
-      }
-
-      const response = await axios.get(`http://localhost:5000/requestfile`, {
-        params: { id: fileId },
-        responseType: "blob", // Important to handle binary data
-      });
-
-      const contentType = response.headers["content-type"];
-      setFileType(contentType);
-
-      // Convert blob to URL
-      const url = URL.createObjectURL(response.data);
-      setFileUrl(url);
-    } catch (error) {
-      console.error("Error fetching file:", error);
-      alert("Could not fetch the file. Please check the console for details.");
-    }
-  };
-
-  const renderFile = () => {
-    if (fileType.startsWith("video/")) {
-      return (
-        <video controls width="600">
-          <source src={fileUrl} type={fileType} />
-          Your browser does not support the video tag.
-        </video>
-      );
-    } else if (fileType.startsWith("image/")) {
-      return <img src={fileUrl} alt="File Thumbnail" width="600" />;
-    } else if (fileType === "application/pdf") {
-      return (
-        <Document file={fileUrl}>
-          <Page pageNumber={1} />
-        </Document>
-      );
-    } else {
-      return <p>Unsupported file type: {fileType}</p>;
-    }
-  };
+    setVideoUrl(videoPath);
+    setThumbnailUrl(thumbnailPath);
+    setResourceUrl(resourceUrl);
+  }, []);
 
   return (
     <div>
-      <h1>File Viewer</h1>
-      <input
-        type="text"
-        placeholder="Enter file ID"
-        value={fileId}
-        onChange={(e) => setFileId(e.target.value)}
-      />
-      <button onClick={handleFetchFile}>Fetch File</button>
-      <div>{fileUrl && renderFile()}</div>
+      <h1>Video Resource Viewer</h1>
+      <video controls width="640" poster={thumbnailUrl}>
+        <source src={videoUrl} type="video/mp4" />
+        Your browser does not support the video tag.
+      </video>
+      <iframe
+          src={resourceUrl}
+          width="640"
+          height="480"
+          title="PDF Viewer"
+          style={{ border: "1px solid #ccc" }}
+        >
+          Your browser does not support the iframe element.
+        </iframe>
     </div>
   );
 };
 
-export default FileViewer;
+export default ViewResource;
