@@ -20,6 +20,8 @@ import Testing from './components/Testing';
 import ForgotPassword from './components/ForgotPassword';
 import Admin from './components/admin';
 import Quiz from './components/quiz';
+import ViewResource from './pages/ViewResource';
+
 
 
 function App() {
@@ -50,6 +52,7 @@ function App() {
         <Route path="/ForgotPassword" element={< ForgotPassword/>} />
         <Route path="/admin" element={< Admin/>} />
         <Route path="/quiz" element={< Quiz/>} />
+        <Route path="/ViewResourse" element={< ViewResource/>} />
       </Routes>
     </BrowserRouter>
   );
