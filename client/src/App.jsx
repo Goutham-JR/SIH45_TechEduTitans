@@ -18,6 +18,7 @@ import BadgesAndAchievementsPage from './pages/BadgeAchivements';
 import SupportPage from './pages/SupportHelp';
 import Testing from './components/Testing';
 import ForgotPassword from './components/ForgotPassword';
+import Admin from './components/admin';
 
 
 function App() {
@@ -46,7 +47,7 @@ function App() {
         <Route path="/dashboard" element={<SupportPage />} />
         <Route path="/logout" element={<Logout />} />
         <Route path="/ForgotPassword" element={< ForgotPassword/>} />
-
+        <Route path="/admin" element={< Admin/>} />
       </Routes>
     </BrowserRouter>
   );
