@@ -19,6 +19,7 @@ import SupportPage from './pages/SupportHelp';
 import Testing from './components/Testing';
 import ForgotPassword from './components/ForgotPassword';
 import Admin from './components/admin';
+import Quiz from './components/quiz';
 
 
 function App() {
@@ -48,6 +49,7 @@ function App() {
         <Route path="/logout" element={<Logout />} />
         <Route path="/ForgotPassword" element={< ForgotPassword/>} />
         <Route path="/admin" element={< Admin/>} />
+        <Route path="/quiz" element={< Quiz/>} />
       </Routes>
     </BrowserRouter>
   );
