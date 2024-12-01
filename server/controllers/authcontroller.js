@@ -3,6 +3,8 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const Joi = require('joi');
 const nodemailer = require("nodemailer");
+require('dotenv').config();
+
 
 
 // Joi schemas for validation
@@ -64,6 +66,7 @@ const signInSchema = Joi.object({
 // Sign Up Function
 exports.signUp = async (req, res) => {
   try {
+    console.log("working");
     // Validate input
     const { error } = signUpSchema.validate(req.body);
     if (error) return res.status(400).json({ error: error.details[0].message });
@@ -111,11 +114,13 @@ exports.signIn = async (req, res) => {
     if (!isMatch) return res.status(400).json({ error: 'Invalid password!' });
 
     // Generate a JWT
-    const token = jwt.sign(
-      { id: user._id },
-      process.env.JWT_SECRET || 'defaultsecret', // use your own secret key here
-      { expiresIn: '1d' }
-    );
+    if (!process.env.JWT_SECRET) {
+      throw new Error("Missing JWT_SECRET environment variable");
+    }
+    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
+      expiresIn: '1d',
+    });
+    
 
     // Set token as an HTTP-only cookie
     res.cookie('token', token, {

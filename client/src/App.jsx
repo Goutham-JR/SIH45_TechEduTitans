@@ -9,7 +9,7 @@ import CourseUpload from './pages/UploadCourse';
 import AssignmentsPage from './pages/Assignments';
 import CertificateGenerator from './components/Certificate';
 import axios from 'axios';
-import Dashboard from './components/Dashboard';
+import Dashboard from './pages/Dashboard';
 import ResultsAndProgressPage from './pages/ResultsProgress';
 import Logout from './components/Logout';
 import QuizPage from './pages/QuizPage';
@@ -24,11 +24,11 @@ import ViewResource from './pages/ViewResource';
 
 
 
+
 function App() {
   axios.defaults.withCredentials = true;
   return (
     <BrowserRouter>
-      {/* Define the application routes */}
       <Routes>
         {/* Root path "/" will render the Home page */}
         <Route path="/" element={<Testing />} />
@@ -47,7 +47,6 @@ function App() {
         <Route path="/badges" element={<BadgesAndAchievementsPage />} />
         <Route path="/certificate" element={<CertificateGenerator />} />
         <Route path="/dashboard" element={<Dashboard />} />
-        <Route path="/dashboard" element={<SupportPage />} />
         <Route path="/logout" element={<Logout />} />
         <Route path="/ForgotPassword" element={< ForgotPassword/>} />
         <Route path="/admin" element={< Admin/>} />

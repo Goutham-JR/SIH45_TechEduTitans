@@ -1,119 +1,103 @@
-import Box from '@mui/material/Box';
-import List from '@mui/material/List';
-import ListItem from '@mui/material/ListItem';
-import ListItemButton from '@mui/material/ListItemButton';
-import ListItemIcon from '@mui/material/ListItemIcon';
-import ListItemText from '@mui/material/ListItemText';
-import Divider from '@mui/material/Divider';
-import HomeIcon from '@mui/icons-material/Home';
-import AnalyticsIcon from '@mui/icons-material/Analytics';
-import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
-import SettingsIcon from '@mui/icons-material/Settings';
-import LogoutIcon from '@mui/icons-material/Logout';
+import {
+  BookOpen,
+  Calendar,
+  ClipboardList,
+  FileText,
+  Menu,
+  PieChart,
+  Settings,
+  TrendingUp,
+} from "lucide-react";
+import { useState } from "react";
+import { AnimatePresence, motion } from "framer-motion";
+import { Link } from "react-router-dom";
 
+const SIDEBAR_ITEMS = [
+  {
+    name: "Dashboard",
+    icon: PieChart,
+    color: "#6366f1",
+    href: "/dashboard",
+  },
+  { name: "Courses", icon: BookOpen, color: "#8B5CF6", href: "/courses" },
+  { name: "Resources", icon: FileText, color: "#EC4899", href: "/resources" },
+  {
+    name: "Assignments",
+    icon: ClipboardList,
+    color: "#10B981",
+    href: "/assignments",
+  },
+  {
+    name: "UploadCourse",
+    icon: ClipboardList,
+    color: "#10B981",
+    href: "/uploadCourse",
+  },
+  {
+    name: "searchListCourse",
+    icon: ClipboardList,
+    color: "#10B981",
+    href: "/searchListCourse",
+  },
+  { name: "Quizzes", icon: PieChart, color: "#F59E0B", href: "/quizzes" },
+  {
+    name: "Leaderboard",
+    icon: TrendingUp,
+    color: "#FF5722",
+    href: "/leaderboard",
+  },
+  { name: "Calendar", icon: Calendar, color: "#3B82F6", href: "/calendar" },
+  { name: "Settings", icon: Settings, color: "#6EE7B7", href: "/settings" },
+];
 
-const SideBar = () => {
-  const menuItemsTop = [
-    { text: 'Home', icon: <HomeIcon /> },
-    { text: 'Analytics', icon: <AnalyticsIcon /> },
-    { text: 'Calendar', icon: <CalendarMonthIcon /> },
-  ];
-
-  const menuItemsBottom = [
-    { text: 'Settings', icon: <SettingsIcon /> },
-    { text: 'Logout', icon: <LogoutIcon /> },
-  ];
+const Sidebar = () => {
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
 
   return (
-    <Box
-      sx={{
-        width: 80, 
-        height: '100vh',
-        backgroundColor: '#f5f5f5',
-        boxShadow: 1,
-        position: 'fixed',
-      }}
+    <motion.div
+      className={`relative z-10 transition-all duration-300 ease-in-out flex-shrink-0 ${
+        isSidebarOpen ? "w-64" : "w-20"
+      }`}
+      animate={{ width: isSidebarOpen ? 256 : 80 }}
     >
-      <List>
-        {menuItemsTop.map((item) => (
-          <ListItem
-            key={item.text}
-            disablePadding
-            sx={{
-              padding: '8px',
-              '&:hover .text': {
-                visibility: 'visible',
-                position: 'absolute',
-                left: '80px',
-                backgroundColor: '#ffffff',
-                padding: '4px 8px',
-                borderRadius: '4px',
-                boxShadow: '0 2px 4px rgba(0, 0, 0, 0.2)',
-              },
-            }}
-          >
-            <ListItemButton>
-              <ListItemIcon
-                sx={{
-                  minWidth: 40, 
-                }}
-              >
-                {item.icon}
-              </ListItemIcon>
-              <ListItemText
-                primary={item.text}
-                className="text"
-                sx={{
-                  visibility: 'hidden',
-                  whiteSpace: 'nowrap',
-                }}
-              />
-            </ListItemButton>
-          </ListItem>
-        ))}
-      </List>
-      <Divider />
-      <List>
-        {menuItemsBottom.map((item) => (
-          <ListItem
-            key={item.text}
-            disablePadding
-            sx={{
-              padding: '8px',
-              '&:hover .text': {
-                visibility: 'visible',
-                position: 'absolute',
-                left: '80px',
-                backgroundColor: '#ffffff',
-                padding: '4px 8px',
-                borderRadius: '4px',
-                boxShadow: '0 2px 4px rgba(0, 0, 0, 0.2)',
-              },
-            }}
-          >
-            <ListItemButton>
-              <ListItemIcon
-                sx={{
-                  minWidth: 40,
-                }}
-              >
-                {item.icon}
-              </ListItemIcon>
-              <ListItemText
-                primary={item.text}
-                className="text"
-                sx={{
-                  visibility: 'hidden',
-                  whiteSpace: 'nowrap',
-                }}
-              />
-            </ListItemButton>
-          </ListItem>
-        ))}
-      </List>
-    </Box>
-    
+      <div className="h-full bg-gray-800 bg-opacity-50 backdrop-blur-md p-4 flex flex-col border-r border-gray-700">
+        <motion.button
+          whileHover={{ scale: 1.1 }}
+          whileTap={{ scale: 0.9 }}
+          onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+          className="p-2 rounded-full hover:bg-gray-700 transition-colors max-w-fit"
+        >
+          <Menu size={24} />
+        </motion.button>
+
+        <nav className="mt-8 flex-grow">
+          {SIDEBAR_ITEMS.map((item) => (
+            <Link key={item.href} to={item.href}>
+              <motion.div className="flex items-center p-4 text-sm font-medium rounded-lg hover:bg-gray-700 transition-colors mb-2">
+                <item.icon
+                  size={20}
+                  style={{ color: item.color, minWidth: "20px" }}
+                />
+                <AnimatePresence>
+                  {isSidebarOpen && (
+                    <motion.span
+                      className="ml-4 whitespace-nowrap"
+                      initial={{ opacity: 0, width: 0 }}
+                      animate={{ opacity: 1, width: "auto" }}
+                      exit={{ opacity: 0, width: 0 }}
+                      transition={{ duration: 0.2, delay: 0.3 }}
+                    >
+                      {item.name}
+                    </motion.span>
+                  )}
+                </AnimatePresence>
+              </motion.div>
+            </Link>
+          ))}
+        </nav>
+      </div>
+    </motion.div>
   );
 };
 
-export default SideBar;
+export default Sidebar;

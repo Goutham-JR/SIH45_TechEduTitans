@@ -27,6 +27,7 @@ npm install @hello-pangea/dnd
 npm install react-dropzone jspdf html2canvas
 npm install react-slick slick-carousel
 npm install slick-carousel/slick/slick.css slick-carousel/slick/slick-theme.css
+npm install postcss autoprefixer
 
 
 

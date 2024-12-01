@@ -87,6 +87,7 @@ const signUpSchema = Joi.object({
 }).with("password", "confirmPassword"); // This ensures both password and confirmPassword are used together
 
 const Header = () => {
+
   const navigate = useNavigate();
   const [openSignIn, setOpenSignIn] = useState(false);
   const [openSignUp, setOpenSignUp] = useState(false);
@@ -159,6 +160,7 @@ const Header = () => {
           withCredentials: true, // Include cookies with the request
         }
       );
+      console.log(response);
 
       setUser(null);
       fetchUser();
@@ -282,7 +284,7 @@ const Header = () => {
       <AppBar
         position="static"
         sx={{
-          backgroundColor: "#478eff",
+          backgroundColor: "#192231",
           color: "#ffffff",
           boxShadow: "0px 4px 10px rgba(0, 0, 0, 0.1)",
         }}
