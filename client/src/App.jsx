@@ -13,7 +13,6 @@ import Dashboard from './pages/Dashboard';
 import ResultsAndProgressPage from './pages/ResultsProgress';
 import Logout from './components/Logout';
 import QuizPage from './pages/QuizPage';
-import LeaderboardPage from './pages/LeaderBoard';
 import BadgesAndAchievementsPage from './pages/BadgeAchivements';
 import SupportPage from './pages/SupportHelp';
 import Testing from './components/Testing';
@@ -21,9 +20,12 @@ import ForgotPassword from './components/ForgotPassword';
 import Admin from './components/admin';
 import Quiz from './components/quiz';
 import ViewResource from './pages/ViewResource';
-
-
-
+import StudentCourse from './pages/StudentCourse'
+import StudentResource from './pages/StudentResource'
+import StudentAssignment from './pages/StudentAssignment'
+import StudentQuizzes from './pages/StudentQuizzes'
+import StudentLeaderBoard from './pages/StudentLeaderBoard';
+import StudentCalender from './pages/StudentCalender';
 
 function App() {
   axios.defaults.withCredentials = true;
@@ -43,7 +45,6 @@ function App() {
         <Route path="/result" element={<ResultsAndProgressPage />} />
         <Route path="/courseupload" element={<CourseUpload />} />
         <Route path="/home" element={<QuizPage />} />
-        <Route path="/leaderboard" element={<LeaderboardPage />} />
         <Route path="/badges" element={<BadgesAndAchievementsPage />} />
         <Route path="/certificate" element={<CertificateGenerator />} />
         <Route path="/dashboard" element={<Dashboard />} />
@@ -52,6 +53,12 @@ function App() {
         <Route path="/admin" element={< Admin/>} />
         <Route path="/quiz" element={< Quiz/>} />
         <Route path="/ViewResourse" element={< ViewResource/>} />
+        <Route path="/StudentCourse" element={< StudentCourse/>} />
+        <Route path="/StudentResource" element={< StudentResource/>} />
+        <Route path="/StudentAssignment" element={< StudentAssignment/>} />
+        <Route path="/StudentQuizzes" element={< StudentQuizzes/>} />
+        <Route path="/StudentLeaderBoard" element={< StudentLeaderBoard/>} />
+        <Route path="/StudentCalender" element={< StudentCalender/>} />
       </Routes>
     </BrowserRouter>
   );
