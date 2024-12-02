@@ -13,53 +13,75 @@ import { Dialog, DialogActions, DialogContent, DialogTitle, Button } from "@mui/
 
 let sessionemail = null, sessionname = null;
 
-
 const PersonalInformation = ({ defaultName, defaultPhone, onSave }) => {
-  const [name] = useState(defaultName); 
-  const [phone] = useState(defaultPhone); 
-  const [gender, setGender] = useState(''); 
-  const [collegeName, setCollegeName] = useState(''); 
-  const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: '' });
+  const [name] = useState(defaultName);
+  const [phone] = useState(defaultPhone);
+  const [gender, setGender] = useState("");
+  const [collegeName, setCollegeName] = useState("");
+  const [dob, setDob] = useState("");
+  const [snackbar, setSnackbar] = useState({ open: false, message: "", severity: "" });
+
+  const calculateAge = (dob) => {
+    const birthDate = new Date(dob);
+    const today = new Date();
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const monthDiff = today.getMonth() - birthDate.getMonth();
+
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+      age--; // Adjust age if the current date is before the birthday
+    }
+    return age;
+  };
 
   const schema = Joi.object({
     name: Joi.string().required().messages({
-      'string.empty': 'Name cannot be empty.',
+      "string.empty": "Name cannot be empty.",
     }),
     phone: Joi.string()
       .pattern(/^\d{10}$/) // Ensures exactly 10 digits
       .required()
       .messages({
-        'string.pattern.base': 'Phone number must be 10 digits.',
-        'string.empty': 'Phone number cannot be empty.',
+        "string.pattern.base": "Phone number must be 10 digits.",
+        "string.empty": "Phone number cannot be empty.",
       }),
-    gender: Joi.string().valid('male', 'female', 'other').required().messages({
-      'string.empty': 'Please select a gender.',
-      'any.only': 'Please select a valid gender.',
+    gender: Joi.string().valid("male", "female", "other").required().messages({
+      "string.empty": "Please select a gender.",
+      "any.only": "Please select a valid gender.",
     }),
     collegeName: Joi.string()
       .pattern(/^[a-zA-Z\s]+$/) // Allows only letters and spaces
       .min(3)
       .required()
       .messages({
-        'string.min': 'College name must be at least 3 characters long.',
-        'string.empty': 'College name cannot be empty.',
-        'string.pattern.base': 'College name can only contain letters and spaces.',
+        "string.min": "College name must be at least 3 characters long.",
+        "string.empty": "College name cannot be empty.",
+        "string.pattern.base": "College name can only contain letters and spaces.",
       }),
+    dob: Joi.date().required().messages({
+      "date.base": "Please select a valid date.",
+      "any.required": "Date of Birth is required.",
+    }),
   });
 
   const handleSave = () => {
+    const age = calculateAge(dob);
+    if (age < 12) {
+      setSnackbar({ open: true, message: "Age must be above 12 years.", severity: "error" });
+      return;
+    }
+
     const { error } = schema.validate(
-      { name, phone, gender, collegeName },
+      { name, phone, gender, collegeName, dob },
       { abortEarly: false }
     );
 
     if (error) {
       error.details.forEach((err) => {
-        setSnackbar({ open: true, message: err.message, severity: 'error' });
+        setSnackbar({ open: true, message: err.message, severity: "error" });
       });
     } else {
-      setSnackbar({ open: true, message: 'Information saved successfully!', severity: 'success' });
-      onSave({ name, phone, gender, collegeName });
+      setSnackbar({ open: true, message: "Information saved successfully!", severity: "success" });
+      onSave({ name, phone, gender, collegeName, dob });
     }
   };
 
@@ -91,7 +113,7 @@ const PersonalInformation = ({ defaultName, defaultPhone, onSave }) => {
               type="radio"
               name="gender"
               value="male"
-              checked={gender === 'male'}
+              checked={gender === "male"}
               onChange={(e) => setGender(e.target.value)}
               className="mr-3"
             />
@@ -102,7 +124,7 @@ const PersonalInformation = ({ defaultName, defaultPhone, onSave }) => {
               type="radio"
               name="gender"
               value="female"
-              checked={gender === 'female'}
+              checked={gender === "female"}
               onChange={(e) => setGender(e.target.value)}
               className="mr-3"
             />
@@ -113,7 +135,7 @@ const PersonalInformation = ({ defaultName, defaultPhone, onSave }) => {
               type="radio"
               name="gender"
               value="other"
-              checked={gender === 'other'}
+              checked={gender === "other"}
               onChange={(e) => setGender(e.target.value)}
               className="mr-3"
             />
@@ -131,6 +153,15 @@ const PersonalInformation = ({ defaultName, defaultPhone, onSave }) => {
           className="w-full sm:w-96 p-2 mt-2 rounded bg-gray-700 text-gray-300"
         />
       </div>
+      <div className="mb-4">
+        <label className="block text-gray-400">Date of Birth</label>
+        <input
+          type="date"
+          value={dob}
+          onChange={(e) => setDob(e.target.value)}
+          className="w-full sm:w-96 p-2 mt-2 rounded bg-gray-700 text-gray-300"
+        />
+      </div>
       <div className="flex gap-4">
         <button
           onClick={handleSave}
@@ -144,11 +175,11 @@ const PersonalInformation = ({ defaultName, defaultPhone, onSave }) => {
       <Snackbar
         open={snackbar.open}
         autoHideDuration={3000}
-        onClose={() => setSnackbar({ open: false, message: '', severity: '' })}
-        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+        onClose={() => setSnackbar({ open: false, message: "", severity: "" })}
+        anchorOrigin={{ vertical: "top", horizontal: "center" }}
       >
         <Alert
-          onClose={() => setSnackbar({ open: false, message: '', severity: '' })}
+          onClose={() => setSnackbar({ open: false, message: "", severity: "" })}
           severity={snackbar.severity}
           variant="filled"
         >
@@ -158,6 +189,7 @@ const PersonalInformation = ({ defaultName, defaultPhone, onSave }) => {
     </div>
   );
 };
+
 
 
 
@@ -570,7 +602,7 @@ const Address = () => {
 
   const addressSchema = Joi.object({
     line1: Joi.string().alphanum().min(3).max(100).required().messages({
-      "string.alphanum": "Address Line 1 must cantain only alphabets and numbers.",
+      "string.alphanum": "Address Line 1 must contain only alphabets and numbers.",
       "string.empty": "Address Line 1 cannot be empty.",
       "any.required": "Address Line 1 is required.",
       "string.min": "Address Line 1 must be at least 3 characters long.",
@@ -600,14 +632,15 @@ const Address = () => {
   const handleSubmit = () => {
     const { error } = addressSchema.validate(address);
     if (error) {
-      showSnackbar(error.message, "error"); 
+      showSnackbar(error.message, "error");
+    } else {
       showSnackbar("Address saved successfully!", "success");
     }
   };
 
   return (
     <div className="pb-10">
-      {/* Snackbar */}
+      {/* Snackbar for displaying validation or success message */}
       <Snackbar
         open={snackbar.open}
         autoHideDuration={3000}
