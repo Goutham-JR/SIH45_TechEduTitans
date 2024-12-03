@@ -1,106 +1,330 @@
-import { useState } from "react";
-import { Lock, Bell, Shield, User, HelpCircle, Trash2 } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Lock, Bell, Shield, User, HelpCircle, Trash2} from "lucide-react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
+import Joi from 'joi';
+import Snackbar from '@mui/material/Snackbar';
+import Alert from '@mui/material/Alert';
+import axios from 'axios';
+import LocationOn from '@mui/icons-material/LocationOn'; 
+import { Dialog, DialogActions, DialogContent, DialogTitle, Button } from "@mui/material";
 
-const NotificationPreferences = ({ preferences, onSave, onReset }) => (
-  <div className="notification-preferences mt-8">
-    <h3 className="text-lg font-semibold text-gray-100">
-      Notification Preferences
-    </h3>
-    <label className="flex items-center mb-4 text-gray-400">
-      <input
-        type="checkbox"
-        checked={preferences.assignmentsDue}
-        onChange={(e) => preferences.setAssignmentsDue(e.target.checked)}
-        className="mr-2"
-      />
-      Notify me about assignments due
-    </label>
-    <label className="flex items-center mb-4 text-gray-400">
-      <input
-        type="checkbox"
-        checked={preferences.courseUpdates}
-        onChange={(e) => preferences.setCourseUpdates(e.target.checked)}
-        className="mr-2"
-      />
-      Notify me about course updates
-    </label>
-    <label className="flex items-center mb-4 text-gray-400">
-      <input
-        type="checkbox"
-        checked={preferences.quizReminders}
-        onChange={(e) => preferences.setQuizReminders(e.target.checked)}
-        className="mr-2"
-      />
-      Notify me about upcoming quizzes
-    </label>
-    <div className="flex gap-4">
-      <button
-        onClick={() => onSave(preferences)}
-        className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded transition duration-200 w-full sm:w-auto"
-      >
-        Save Preferences
-      </button>
-      <button
-        onClick={onReset}
-        className="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded transition duration-200 w-full sm:w-auto"
-      >
-        Reset to Default
-      </button>
-    </div>
-  </div>
-);
 
-const PasswordUpdate = ({ onChangePassword, onCancel }) => (
-  <div className="password-update mt-8 z-0">
-    <h3 className="text-lg font-semibold text-gray-100">Change Password</h3>
-    <div className="mb-4">
-      <label className="block text-gray-400">Current Password</label>
-      <input
-        type="password"
-        placeholder="Enter current password"
-        className="w-full sm:w-96 p-2 mt-2 rounded bg-gray-700 text-gray-300"
-      />
-    </div>
-    <div className="mb-4">
-      <label className="block text-gray-400">New Password</label>
-      <input
-        type="password"
-        placeholder="Enter new password"
-        className="w-full sm:w-96 p-2 mt-2 rounded bg-gray-700 text-gray-300"
-      />
-    </div>
-    <div className="mb-4">
-      <label className="block text-gray-400">Confirm New Password</label>
-      <input
-        type="password"
-        placeholder="Confirm new password"
-        className="w-full sm:w-96 p-2 mt-2 rounded bg-gray-700 text-gray-300"
-      />
-    </div>
-    <div className="flex gap-4">
-      <button
-        onClick={onChangePassword}
-        className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded transition duration-200 w-full sm:w-auto"
+
+let sessionemail = null, sessionname = null;
+
+const PersonalInformation = ({ defaultName, defaultPhone, onSave }) => {
+  const [name] = useState(defaultName);
+  const [phone] = useState(defaultPhone);
+  const [gender, setGender] = useState("");
+  const [collegeName, setCollegeName] = useState("");
+  const [dob, setDob] = useState("");
+  const [snackbar, setSnackbar] = useState({ open: false, message: "", severity: "" });
+
+  const calculateAge = (dob) => {
+    const birthDate = new Date(dob);
+    const today = new Date();
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const monthDiff = today.getMonth() - birthDate.getMonth();
+
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+      age--; // Adjust age if the current date is before the birthday
+    }
+    return age;
+  };
+
+  const schema = Joi.object({
+    name: Joi.string().required().messages({
+      "string.empty": "Name cannot be empty.",
+    }),
+    phone: Joi.string()
+      .pattern(/^\d{10}$/) // Ensures exactly 10 digits
+      .required()
+      .messages({
+        "string.pattern.base": "Phone number must be 10 digits.",
+        "string.empty": "Phone number cannot be empty.",
+      }),
+    gender: Joi.string().valid("male", "female", "other").required().messages({
+      "string.empty": "Please select a gender.",
+      "any.only": "Please select a valid gender.",
+    }),
+    collegeName: Joi.string()
+      .pattern(/^[a-zA-Z\s]+$/) // Allows only letters and spaces
+      .min(3)
+      .required()
+      .messages({
+        "string.min": "College name must be at least 3 characters long.",
+        "string.empty": "College name cannot be empty.",
+        "string.pattern.base": "College name can only contain letters and spaces.",
+      }),
+    dob: Joi.date().required().messages({
+      "date.base": "Please select a valid date.",
+      "any.required": "Date of Birth is required.",
+    }),
+  });
+
+  const handleSave = () => {
+    const age = calculateAge(dob);
+    if (age < 12) {
+      setSnackbar({ open: true, message: "Age must be above 12 years.", severity: "error" });
+      return;
+    }
+
+    const { error } = schema.validate(
+      { name, phone, gender, collegeName, dob },
+      { abortEarly: false }
+    );
+
+    if (error) {
+      error.details.forEach((err) => {
+        setSnackbar({ open: true, message: err.message, severity: "error" });
+      });
+    } else {
+      setSnackbar({ open: true, message: "Information saved successfully!", severity: "success" });
+      onSave({ name, phone, gender, collegeName, dob });
+    }
+  };
+
+  return (
+    <div className="personal-information mt-8">
+      <div className="mb-4">
+        <label className="block text-gray-400">Name</label>
+        <input
+          type="text"
+          value={name}
+          readOnly
+          className="w-full sm:w-96 p-2 mt-2 rounded bg-gray-700 text-gray-300 cursor-not-allowed"
+        />
+      </div>
+      <div className="mb-4">
+        <label className="block text-gray-400">Phone Number</label>
+        <input
+          type="text"
+          value={phone}
+          readOnly
+          className="w-full sm:w-96 p-2 mt-2 rounded bg-gray-700 text-gray-300 cursor-not-allowed"
+        />
+      </div>
+      <div className="mb-4">
+        <label className="block text-gray-400">Gender</label>
+        <div className="flex gap-4">
+          <label className="flex items-center text-gray-400">
+            <input
+              type="radio"
+              name="gender"
+              value="male"
+              checked={gender === "male"}
+              onChange={(e) => setGender(e.target.value)}
+              className="mr-3"
+            />
+            Male
+          </label>
+          <label className="flex items-center text-gray-400">
+            <input
+              type="radio"
+              name="gender"
+              value="female"
+              checked={gender === "female"}
+              onChange={(e) => setGender(e.target.value)}
+              className="mr-3"
+            />
+            Female
+          </label>
+          <label className="flex items-center text-gray-400">
+            <input
+              type="radio"
+              name="gender"
+              value="other"
+              checked={gender === "other"}
+              onChange={(e) => setGender(e.target.value)}
+              className="mr-3"
+            />
+            Other
+          </label>
+        </div>
+      </div>
+      <div className="mb-4">
+        <label className="block text-gray-400">College Name</label>
+        <input
+          type="text"
+          placeholder="Enter your college name"
+          value={collegeName}
+          onChange={(e) => setCollegeName(e.target.value)}
+          className="w-full sm:w-96 p-2 mt-2 rounded bg-gray-700 text-gray-300"
+        />
+      </div>
+      <div className="mb-4">
+        <label className="block text-gray-400">Date of Birth</label>
+        <input
+          type="date"
+          value={dob}
+          onChange={(e) => setDob(e.target.value)}
+          className="w-full sm:w-96 p-2 mt-2 rounded bg-gray-700 text-gray-300"
+        />
+      </div>
+      <div className="flex gap-4">
+        <button
+          onClick={handleSave}
+          className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded transition duration-200 w-full sm:w-auto"
+        >
+          Save Changes
+        </button>
+      </div>
+
+      {/* Snackbar for notifications */}
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={3000}
+        onClose={() => setSnackbar({ open: false, message: "", severity: "" })}
+        anchorOrigin={{ vertical: "top", horizontal: "center" }}
       >
-        Save New Password
-      </button>
-      <button
-        onClick={onCancel}
-        className="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded transition duration-200 w-full sm:w-auto"
-      >
-        Cancel
-      </button>
+        <Alert
+          onClose={() => setSnackbar({ open: false, message: "", severity: "" })}
+          severity={snackbar.severity}
+          variant="filled"
+        >
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
     </div>
-  </div>
-);
+  );
+};
+
+
+
+
+const PasswordUpdate = ({ onChangePassword, onCancel }) => {
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: '' });
+
+  const schema = Joi.object({
+    currentPassword: Joi.string().required().messages({
+      'string.empty': 'Current password cannot be empty.',
+    }),
+    newPassword: Joi.string()
+      .min(8)
+      .pattern(/[\W_]/) // Ensures at least one special character
+      .required()
+      .messages({
+        'string.min': 'Password must be at least 8 characters long.',
+        'string.pattern.base': 'Password must include at least one special character.',
+        'string.empty': 'New password cannot be empty.',
+      }),
+    confirmPassword: Joi.string()
+      .valid(Joi.ref('newPassword'))
+      .required()
+      .messages({
+        'any.only': 'Passwords do not match.',
+        'string.empty': 'Confirm password cannot be empty.',
+      }),
+  });
+
+  const handleSubmit = async () => {
+    const { error } = schema.validate(
+      { currentPassword, newPassword, confirmPassword },
+      { abortEarly: false }
+    );
+
+    if (error) {
+      error.details.forEach((err) => {
+        setSnackbar({ open: true, message: err.message, severity: 'error' });
+      });
+    } else {
+      try {
+        const response = await axios.post('http://localhost:5000/api/users/update-password', {
+           currentPassword, newPassword} , {
+            withCredentials: true,
+          } 
+        );
+  
+
+        setSnackbar({ open: true, message: response.data.message, severity: 'success' });
+        onChangePassword(); 
+      } catch (err) {
+        console.log(err);
+        setSnackbar({ open: true, message: err.response?.data?.error || 'An error occurred', severity: 'error' });
+      }
+    }
+  };
+
+  return (
+    <div className="password-update mt-8 z-0">
+      <h3 className="text-lg font-semibold text-gray-100">Change Password</h3>
+      <div className="mb-4">
+        <label className="block text-gray-400">Current Password</label>
+        <input
+          type="password"
+          placeholder="Enter current password"
+          className="w-full sm:w-96 p-2 mt-2 rounded bg-gray-700 text-gray-300"
+          value={currentPassword}
+          onChange={(e) => setCurrentPassword(e.target.value)}
+        />
+      </div>
+      <div className="mb-4">
+        <label className="block text-gray-400">New Password</label>
+        <input
+          type="password"
+          placeholder="Enter new password"
+          className="w-full sm:w-96 p-2 mt-2 rounded bg-gray-700 text-gray-300"
+          value={newPassword}
+          onChange={(e) => setNewPassword(e.target.value)}
+        />
+      </div>
+      <div className="mb-4">
+        <label className="block text-gray-400">Confirm New Password</label>
+        <input
+          type="password"
+          placeholder="Confirm new password"
+          className="w-full sm:w-96 p-2 mt-2 rounded bg-gray-700 text-gray-300"
+          value={confirmPassword}
+          onChange={(e) => setConfirmPassword(e.target.value)}
+        />
+      </div>
+      <div className="flex gap-4">
+        <button
+          onClick={handleSubmit}
+          className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded transition duration-200 w-full sm:w-auto"
+        >
+          Save New Password
+        </button>
+        <button
+          onClick={onCancel}
+          className="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded transition duration-200 w-full sm:w-auto"
+        >
+          Cancel
+        </button>
+      </div>
+
+      {/* Snackbar for notifications */}
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={3000}
+        onClose={() => setSnackbar({ open: false, message: '', severity: '' })}
+        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+      >
+        <Alert
+          onClose={() => setSnackbar({ open: false, message: '', severity: '' })}
+          severity={snackbar.severity}
+          variant="filled"
+        >
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
+    </div>
+  );
+};
+
+
+
+
+
 
 const ProfileInformation = ({ user, onSave, onCancel }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [newPhoto, setNewPhoto] = useState(null);
 
-  // Use React Router's useNavigate hook for navigation
   const navigate = useNavigate();
 
   const handlePhotoUpload = (e) => {
@@ -110,7 +334,6 @@ const ProfileInformation = ({ user, onSave, onCancel }) => {
       ["image/png", "image/jpg", "image/jpeg", "image/gif"].includes(file.type)
     ) {
       if (file.size <= 1048576) {
-        // File size check (1MB)
         setNewPhoto(URL.createObjectURL(file));
       } else {
         alert("File size must be less than 1MB");
@@ -150,8 +373,8 @@ const ProfileInformation = ({ user, onSave, onCancel }) => {
           />
         </div>
         <div>
-          <h3 className="text-lg font-semibold text-gray-100">{user.name}</h3>
-          <p className="text-gray-400">{user.email}</p>
+          <h3 className="text-lg font-semibold text-gray-100">{sessionname}</h3>
+          <p className="text-gray-400">{sessionemail}</p>
         </div>
       </div>
 
@@ -197,7 +420,7 @@ const ProfileInformation = ({ user, onSave, onCancel }) => {
                 Save Changes
               </button>
               <button
-                onClick={() => setIsModalOpen(false)} // Close the modal when clicked
+                onClick={() => setIsModalOpen(false)} 
                 className="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded transition duration-200 w-full sm:w-auto"
               >
                 Close
@@ -243,29 +466,65 @@ const SettingSection = ({ icon: Icon, title, children }) => {
   );
 };
 
-const SkillInput = () => {
-  const [skills, setSkills] = useState([]); // Stores the list of skills
-  const [newSkill, setNewSkill] = useState(""); // Stores the skill currently being added
 
-  // Function to add a skill to the list
+const SkillInput = () => {
+  const [skills, setSkills] = useState([]); 
+  const [newSkill, setNewSkill] = useState(""); 
+  const [snackbar, setSnackbar] = useState({ open: false, message: "", severity: "" }); 
+
+  const skillSchema = Joi.string()
+    .pattern(/^[A-Za-z].*/) // Skill must start with a letter and be at least 3 characters
+    .required()
+    .messages({
+      "string.pattern.base": "Skill must start with a letter.",
+      "string.empty": "Skill cannot be empty.",
+      "any.required": "Skill is required.",
+    });
+
+  const showSnackbar = (message, severity) => {
+    setSnackbar({ open: true, message, severity });
+    setTimeout(() => setSnackbar({ open: false, message: "", severity: "" }), 3000);
+  };
+
   const addSkill = () => {
-    if (newSkill && !skills.includes(newSkill)) {
-      setSkills((prevSkills) => [...prevSkills, newSkill]);
-      setNewSkill(""); // Clear the input after adding
+    const { error } = skillSchema.validate(newSkill);
+
+    if (error) {
+      showSnackbar(error.message, "error"); 
+    } else if (skills.includes(newSkill)) {
+      showSnackbar("Skill already added.", "warning");
     } else {
-      alert("Please enter a valid skill.");
+      setSkills((prevSkills) => [...prevSkills, newSkill]);
+      setNewSkill(""); 
+      showSnackbar("Skill added successfully!", "success");
     }
   };
 
-  // Function to remove a skill from the list
   const removeSkill = (skill) => {
     setSkills(skills.filter((item) => item !== skill));
+    showSnackbar("Skill removed.", "error");
   };
 
   return (
     <div className="pb-10">
+      {/* Snackbar */}
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={3000}
+        onClose={() => setSnackbar({ open: false, message: '', severity: '' })}
+        anchorOrigin={{ vertical: 'top', horizontal: 'center' }} 
+      >
+        <Alert
+          onClose={() => setSnackbar({ open: false, message: '', severity: '' })}
+          severity={snackbar.severity}
+          variant="filled"
+        >
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
+
       <motion.div
-        className="bg-gray-800 bg-opacity-50 backdrop-blur-md shadow-lg rounded-xl p-6 border border-gray-700 space-y-6 pb-8" // Fixed bottom padding (pb-8)
+        className="bg-gray-800 bg-opacity-50 backdrop-blur-md shadow-lg rounded-xl p-6 border border-gray-700 space-y-6 pb-8"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.3 }}
@@ -317,137 +576,185 @@ const SkillInput = () => {
   );
 };
 
-const ToggleSwitch = ({ label, isOn, onToggle }) => {
+
+
+const Address = () => {
+  const [address, setAddress] = useState({
+    line1: "",
+    state: "",
+    city: "",
+    pincode: "",
+  });
+
+  const [snackbar, setSnackbar] = useState({
+    open: false,
+    message: "",
+    severity: "",
+  });
+
+  const states = [
+    "Andhra Pradesh", "Arunachal Pradesh", "Assam", "Bihar", "Chhattisgarh",
+    "Goa", "Gujarat", "Haryana", "Himachal Pradesh", "Jharkhand", "Karnataka",
+    "Kerala", "Madhya Pradesh", "Maharashtra", "Manipur", "Meghalaya", "Mizoram",
+    "Nagaland", "Odisha", "Punjab", "Rajasthan", "Sikkim", "Tamil Nadu", "Telangana",
+    "Uttar Pradesh", "Uttarakhand", "West Bengal"
+  ];
+
+  const addressSchema = Joi.object({
+    line1: Joi.string().alphanum().min(3).max(100).required().messages({
+      "string.alphanum": "Address Line 1 must contain only alphabets and numbers.",
+      "string.empty": "Address Line 1 cannot be empty.",
+      "any.required": "Address Line 1 is required.",
+      "string.min": "Address Line 1 must be at least 3 characters long.",
+    }),
+    state: Joi.string().valid(...states).required().messages({
+      "any.only": "Please select a valid state.",
+      "any.required": "State is required.",
+    }),
+    city: Joi.string().regex(/^[A-Za-z\s]+$/).min(3).required().messages({
+      "string.pattern.base": "City name must contain only alphabets.",
+      "string.empty": "City cannot be empty.",
+      "any.required": "City is required.",
+      "string.min": "City name must be at least 3 characters long.",
+    }),
+    pincode: Joi.string().length(6).pattern(/^\d+$/).required().messages({
+      "string.length": "Pincode must have 6 digits.",
+      "string.pattern.base": "Pincode must contain only numbers.",
+      "any.required": "Pincode is required.",
+    }),
+  });
+
+  const showSnackbar = (message, severity) => {
+    setSnackbar({ open: true, message, severity });
+    setTimeout(() => setSnackbar({ open: false, message: "", severity: "" }), 3000);
+  };
+
+  const handleSubmit = () => {
+    const { error } = addressSchema.validate(address);
+    if (error) {
+      showSnackbar(error.message, "error");
+    } else {
+      showSnackbar("Address saved successfully!", "success");
+    }
+  };
+
   return (
-    <div className="flex items-center justify-between py-3">
-      <span className="text-gray-300">{label}</span>
-      <button
-        className={`
-        relative inline-flex items-center h-6 rounded-full w-11 transition-colors focus:outline-none
-        ${isOn ? "bg-indigo-600" : "bg-gray-600"}
-        `}
-        onClick={onToggle}
+    <div className="pb-10">
+      {/* Snackbar for displaying validation or success message */}
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={3000}
+        onClose={() => setSnackbar({ open: false, message: "", severity: "" })}
+        anchorOrigin={{ vertical: "top", horizontal: "center" }}
       >
-        <span
-          className={`inline-block size-4 transform transition-transform bg-white rounded-full 
-            ${isOn ? "translate-x-6" : "translate-x-1"}
-            `}
-        />
-      </button>
+        <Alert
+          onClose={() => setSnackbar({ open: false, message: "", severity: "" })}
+          severity={snackbar.severity}
+          variant="filled"
+        >
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
+
+      <div className="bg-gray-800 bg-opacity-50 backdrop-blur-md shadow-lg rounded-xl p-6 border border-gray-700 space-y-6 pb-8">
+        {/* Address Header */}
+        <h2 className="text-2xl font-bold text-white flex items-center">
+          <LocationOn className="mr-2" />
+          Address Information
+        </h2>
+
+        {/* Address Line 1 */}
+        <div className="flex flex-col">
+          <label className="text-white">Address Line 1</label>
+          <input
+            type="text"
+            value={address.line1}
+            onChange={(e) => setAddress({ ...address, line1: e.target.value })}
+            className="p-2 w-full rounded-md text-gray-900"
+            placeholder="Enter address line 1"
+          />
+        </div>
+
+        {/* Country (India, non-editable) */}
+        <div className="flex flex-col mt-4">
+          <label className="text-white">Country</label>
+          <input
+            type="text"
+            value="India"
+            readOnly
+            className="p-2 w-full rounded-md text-gray-900 bg-gray-300 cursor-not-allowed"
+          />
+        </div>
+
+        {/* State Dropdown */}
+        <div className="flex flex-col mt-4">
+          <label className="text-white">State</label>
+          <select
+            value={address.state}
+            onChange={(e) => setAddress({ ...address, state: e.target.value })}
+            className="p-2 w-full rounded-md text-gray-900"
+          >
+            <option value="">Select State</option>
+            {states.map((state, index) => (
+              <option key={index} value={state}>
+                {state}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {/* City Input */}
+        <div className="flex flex-col mt-4">
+          <label className="text-white">City</label>
+          <input
+            type="text"
+            value={address.city}
+            onChange={(e) => setAddress({ ...address, city: e.target.value })}
+            className="p-2 w-full rounded-md text-gray-900"
+            placeholder="Enter city"
+          />
+        </div>
+
+        {/* Pincode Input */}
+        <div className="flex flex-col mt-4">
+          <label className="text-white">Pincode</label>
+          <input
+            type="text"
+            value={address.pincode}
+            onChange={(e) => setAddress({ ...address, pincode: e.target.value })}
+            className="p-2 w-full rounded-md text-gray-900"
+            placeholder="Enter pincode"
+          />
+        </div>
+
+        {/* Submit Button */}
+        <div className="mt-6">
+          <button
+            onClick={handleSubmit}
+            className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded transition duration-200"
+          >
+            Save Address
+          </button>
+        </div>
+      </div>
     </div>
   );
 };
 
-const Notifications = () => {
-  const [notifications, setNotifications] = useState({
-    push: true,
-    email: false,
-    sms: true,
-  });
-
-  return (
-    <SettingSection icon={Bell} title={"Notifications"}>
-      <ToggleSwitch
-        label={"Push Notifications"}
-        isOn={notifications.push}
-        onToggle={() =>
-          setNotifications({ ...notifications, push: !notifications.push })
-        }
-      />
-      <ToggleSwitch
-        label={"Email Notifications"}
-        isOn={notifications.email}
-        onToggle={() =>
-          setNotifications({ ...notifications, email: !notifications.email })
-        }
-      />
-      <ToggleSwitch
-        label={"SMS Notifications"}
-        isOn={notifications.sms}
-        onToggle={() =>
-          setNotifications({ ...notifications, sms: !notifications.sms })
-        }
-      />
-    </SettingSection>
-  );
-};
-
-const Security = () => {
-  const [twoFactor, setTwoFactor] = useState(false);
-
-  return (
-    <SettingSection icon={Lock} title={"Security"}>
-      <ToggleSwitch
-        label={"Two-Factor Authentication"}
-        isOn={twoFactor}
-        onToggle={() => setTwoFactor(!twoFactor)}
-      />
-      <div className="mt-4">
-        <button
-          className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded 
-        transition duration-200
-        "
-        >
-          Change Password
-        </button>
-      </div>
-    </SettingSection>
-  );
-};
-
-const ConnectedAccounts = () => {
-  const [connectedItems, setConnectedItems] = useState([
-    {
-      id: 1,
-      type: "Email",
-      value: "user@example.com",
-      connected: true,
-    },
-    {
-      id: 2,
-      type: "Phone",
-      value: "+1234567890",
-      connected: false,
-    },
-  ]);
-
-  return (
-    <SettingSection icon={HelpCircle} title={"Connected Accounts"}>
-      {connectedItems.map((item) => (
-        <div key={item.id} className="flex items-center justify-between py-3">
-          <div className="flex flex-col">
-            <span className="text-gray-300">{item.type}</span>
-            <span className="text-gray-400 text-sm">{item.value}</span>
-          </div>
-          <button
-            className={`px-3 py-1 rounded ${
-              item.connected
-                ? "bg-green-600 hover:bg-green-700"
-                : "bg-gray-600 hover:bg-gray-700"
-            } transition duration-200`}
-            onClick={() => {
-              setConnectedItems(
-                connectedItems.map((acc) => {
-                  if (acc.id === item.id) {
-                    return {
-                      ...acc,
-                      connected: !acc.connected,
-                    };
-                  }
-                  return acc;
-                })
-              );
-            }}
-          >
-            {item.connected ? "Connected" : "Connect"}
-          </button>
-        </div>
-      ))}
-    </SettingSection>
-  );
-};
 
 const DangerZone = () => {
+  const [showConfirm, setShowConfirm] = useState(false); 
+  const [snackbar, setSnackbar] = useState({ open: false, message: "", severity: "" });
+
+  const handleDeleteAccount = (confirm) => {
+    if (confirm) {
+      setSnackbar({ open: true, message: "Your account has been deleted permanently.", severity: "success" });
+    } else {
+      setSnackbar({ open: true, message: "Account deletion canceled.", severity: "info" });
+    }
+    setShowConfirm(false); 
+  };
+
   return (
     <motion.div
       className="bg-red-900 bg-opacity-50 backdrop-filter backdrop-blur-lg shadow-lg rounded-xl p-6 border border-red-700 mb-8"
@@ -457,17 +764,76 @@ const DangerZone = () => {
     >
       <div className="flex items-center mb-4">
         <Trash2 className="text-red-400 mr-3" size={24} />
-        <h2 className="text-xl font-semibold text-gray-100">Danger Zone</h2>
+        <h2 className="text-xl font-semibold text-gray-100">Delete Account</h2>
       </div>
       <p className="text-gray-300 mb-4">
         Permanently delete your account and all of your content.
       </p>
+
+      {/* Button to trigger the confirmation modal */}
       <button
-        className="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded 
-      transition duration-200"
+        onClick={() => setShowConfirm(true)}
+        className="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded transition duration-200"
       >
         Delete Account
       </button>
+
+      {/* Confirmation Dialog */}
+      <Dialog
+        open={showConfirm}
+        onClose={() => setShowConfirm(false)}
+        maxWidth="sm"
+        fullWidth
+        PaperProps={{
+          style: {
+            position: 'absolute',
+            top: '20%',
+            left: '50%',
+            transform: 'translateX(-50%)',
+          }
+        }}
+      >
+        <DialogTitle className="text-center text-xl text-gray-700">Confirm Account Deletion</DialogTitle>
+        <DialogContent className="text-center">
+          <p className="text-gray-700 mb-4">
+            Are you sure you want to permanently delete your account? This action cannot be undone.
+          </p>
+        </DialogContent>
+        <DialogActions className="flex justify-center space-x-4 pb-4">
+          <Button
+            onClick={() => handleDeleteAccount(true)}
+            color="primary"
+            variant="outlined"
+            className="px-6 py-2"
+          >
+            yes
+          </Button>
+          <Button
+            onClick={() => handleDeleteAccount(false)}
+            color="secondary"
+            variant="contained"
+            className="px-6 py-2"
+          >
+            No
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Snackbar for feedback */}
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={3000}
+        onClose={() => setSnackbar({ open: false, message: "", severity: "" })}
+        anchorOrigin={{ vertical: "top", horizontal: "center" }}
+      >
+        <Alert
+          onClose={() => setSnackbar({ open: false, message: "", severity: "" })}
+          severity={snackbar.severity}
+          variant="filled"
+        >
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
     </motion.div>
   );
 };
@@ -479,6 +845,34 @@ const SettingsPage = () => {
     email: "john.doe@example.com",
     avatar: "https://randomuser.me/api/portraits/men/3.jpg",
   });
+
+  const [userDetail, setUserDetail] = useState(null);
+  const fetchUser = async () => {
+    try {
+      const isLogged = true; // Replace with your actual logic for checking login status
+      if (isLogged) {
+        const res = await axios.get(
+          "http://localhost:5000/api/protected/fetchuserdetail",
+          {
+            withCredentials: true,
+          }
+        );
+        setUserDetail(res.data.user);
+        console.log(res.data.user);
+      }
+    } catch (err) {
+      console.error("Error fetching user details:", err);
+    }
+  };
+
+  // useEffect runs only once on mount
+  useEffect(() => {
+    fetchUser(); // Fetch user details on mount
+  }, []);
+
+  sessionemail = userDetail?.email || 'no email';
+  sessionname = userDetail?.name || 'no name';
+
 
   const [preferences, setPreferences] = useState({
     assignmentsDue: true,
@@ -581,17 +975,15 @@ const SettingsPage = () => {
             />
           </SettingSection>
 
-          <SettingSection icon={Bell} title="Notification Preferences">
-            <NotificationPreferences
-              preferences={preferences}
-              onSave={handleSavePreferences}
-              onReset={handleResetPreferences}
-            />
+          <SettingSection icon={User} title="Personal information">
+          <PersonalInformation 
+            defaultName="John Doe" 
+            defaultPhone="9876543210" 
+            onSave={(data) => console.log('Saved Data:', data)} 
+          />
           </SettingSection>
           <SkillInput />
-          <Notifications />
-          <Security />
-          <ConnectedAccounts />
+          <Address />
           <DangerZone />
         </div>
       </div>

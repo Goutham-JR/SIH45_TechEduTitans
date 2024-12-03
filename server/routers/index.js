@@ -7,6 +7,7 @@ const courseRoutes = require('../routers/course');
 const completedCourseRouter = require('../routers/completedCourseRouter');
 const courseRouter = require('../routers/admincourseRouter');
 const quizRoutes = require('../routers/quizRoutes');
+const passupdate = require('../routers/passwordupdate');
 const { connectDB } = require('../config/db');
 
 // Initialize app and connect to DB
@@ -42,6 +43,7 @@ app.use('/api/course', courseRoutes);
 app.use('/api', courseRouter);
 app.use('/api/quiz', quizRoutes);
 app.use('/api/completed-courses', completedCourseRouter);
+app.use('/api/users', passupdate);
 
 // Catch-all middleware for unhandled routes
 app.use((req, res) => {
@@ -51,7 +53,6 @@ app.use((req, res) => {
 
 // Global error handler
 app.use((err, req, res, next) => {
-  console.error('Global Error:', err.message);
   res.status(err.status || 500).json({ error: err.message || 'Internal Server Error' });
 });
 
