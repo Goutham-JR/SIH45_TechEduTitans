@@ -16,7 +16,7 @@ const videoSchema = new mongoose.Schema({
   title: { type: String, required: true },
   description: { type: String, required: true },
   thumbnail: { type: String, required: true }, // Path to thumbnail file
-  video: { type: String, required: true }, // Path to video file
+  video: { type: String, required: true },  // Path to video file
   resource: { type: String }, // Path to additional resource file
 });
 
@@ -40,7 +40,8 @@ const courseSchema = new mongoose.Schema(
       required:false,
     },
     finalQuiz: { type: quizSchema, required: false }, // Final quiz for the course
-    trailerId: { type: String, required: false }, // Path to trailer file
+    trailerId: { type: String, required: false },
+    thumbnailtrailer: { type: String, required: false }, // Path to trailer file
   },
   { timestamps: true } // Automatically add createdAt and updatedAt timestamps
 );

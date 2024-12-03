@@ -9,6 +9,8 @@ const courseRouter = require('../routers/admincourseRouter');
 const quizRoutes = require('../routers/quizRoutes');
 const passupdate = require('../routers/passwordupdate');
 const { connectDB } = require('../config/db');
+const bodyParser = require('body-parser');
+const formidable = require('formidable');
 
 // Initialize app and connect to DB
 const app = express();
@@ -23,6 +25,7 @@ app.use(
     allowedHeaders: ['Content-Type', 'Authorization'], // Allowed headers
   })
 );
+
 app.use(cookieParser());
 app.use(express.json()); // JSON body parser
 app.use(express.urlencoded({ extended: true })); // URL-encoded body parser
@@ -31,6 +34,20 @@ app.use(express.urlencoded({ extended: true })); // URL-encoded body parser
 app.use((req, res, next) => {
   console.log(`Received ${req.method} request for ${req.url}`);
   next();
+});
+
+
+app.use((req, res, next) => {
+  const form = formidable({ multiples: true });
+  form.parse(req, (err, fields, files) => {
+    if (err) {
+      console.error("Error parsing form data:", err);
+      return res.status(400).json({ error: "Invalid form data" });
+    }
+    req.fields = fields;
+    req.files = files;
+    next();
+  });
 });
 
 // Handle OPTIONS preflight requests

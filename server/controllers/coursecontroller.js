@@ -35,15 +35,16 @@ exports.create = async (req, res) => {
 
 exports.uploadtrailer = async (req, res) => {
   try {
-    console.log("Received POST request for /api/course/uploadtrailer");
+    console.log("Received POST request for /api/course/uploadTrailerWithThumbnail");
 
     const { courseId } = req.fields;
     const trailer = req.files.trailer;
+    const thumbnail = req.files.thumbnail;
 
-    if (!courseId || !trailer) {
-      return res
-        .status(400)
-        .json({ error: "Course ID and trailer file are required" });
+    if (!courseId || !trailer || !thumbnail) {
+      return res.status(400).json({
+        error: "Course ID, trailer file, and thumbnail file are required",
+      });
     }
 
     const course = await Course.findById(courseId);
@@ -51,34 +52,38 @@ exports.uploadtrailer = async (req, res) => {
       return res.status(404).json({ error: "Course not found" });
     }
 
-    const filepath = trailer.path;
+    const trailerMimeType = trailer.mimetype || "video/mp4";
+    const thumbnailMimeType = thumbnail.mimetype || "image/jpeg";
 
     await mongoose.connect("mongodb://localhost:27017/ELearning", {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
     });
 
     const conn = mongoose.connection;
     const bucket = new GridFSBucket(conn.db, { bucketName: "uploads" });
 
     try {
-      await checkFileAccess(filepath);
-      const fileId = await uploadFile(filepath, bucket);
-      course.trailerId = fileId;
+      const trailerFileId = await uploadFile(trailer.path, bucket, trailerMimeType);
+      const thumbnailFileId = await uploadFile(thumbnail.path, bucket, thumbnailMimeType);
+
+      course.trailerId = trailerFileId;
+      course.thumbnailtrailer = thumbnailFileId;
       await course.save();
 
-      res
-        .status(200)
-        .json({ message: "Trailer uploaded successfully!", trailerId: fileId });
+      res.status(200).json({
+        message: "Trailer and thumbnail uploaded successfully!",
+        trailerId: trailerFileId,
+        thumbnailId: thumbnailFileId,
+      });
     } catch (err) {
       console.error("Error during file upload:", err);
       res.status(500).json({ error: "File upload error" });
     }
   } catch (err) {
-    console.error("Error handling upload trailer:", err);
+    console.error("Error handling upload trailer with thumbnail:", err);
     res.status(500).json({ error: "Server error" });
   }
 };
+
 
 exports.uploadweeks = async (req, res) => {
   try {
@@ -118,13 +123,14 @@ exports.uploadweeks = async (req, res) => {
       await checkFileAccess(videoFile.path);
       await checkFileAccess(thumbnailFile.path);
 
-      const videoId = await uploadFile(videoFile.path, bucket);
-      const thumbnailId = await uploadFile(thumbnailFile.path, bucket);
+      // Pass MIME type explicitly
+      const videoId = await uploadFile(videoFile.path, bucket, videoFile.mimetype || "video/mp4");
+      const thumbnailId = await uploadFile(thumbnailFile.path, bucket, thumbnailFile.mimetype || "image/jpeg");
       let resourceId = null;
 
       if (resourceFile) {
         await checkFileAccess(resourceFile.path);
-        resourceId = await uploadResourceFile(resourceFile.path, bucket);
+        resourceId = await uploadFile(resourceFile.path, bucket, resourceFile.mimetype || "application/pdf");
       }
 
       // Find the week by weekNumber or create a new one if it doesn't exist
@@ -161,6 +167,7 @@ exports.uploadweeks = async (req, res) => {
     res.status(500).json({ error: "Server error" });
   }
 };
+
 
 exports.uploadquiz = async (req, res) => {
   try {
@@ -283,25 +290,21 @@ function checkFileAccess(filePath) {
   });
 }
 
-function uploadFile(filePath, bucket) {
+const uploadFile = async (filePath, bucket, providedMimeType = null) => {
   return new Promise((resolve, reject) => {
-    const fileName = path.basename(filePath); // Extract the file name
-    const contentType = mime.lookup(filePath) || "application/octet-stream";
+    const fileName = path.basename(filePath);
+    const contentType = providedMimeType || mime.lookup(filePath) || "application/octet-stream"; // Use provided MIME or fallback
+
+    console.log(`Uploading: ${fileName}, Content-Type: ${contentType}`); // Log the MIME type
+
     const uploadStream = bucket.openUploadStream(fileName, {
       chunkSizeBytes: 1024 * 1024, // 1MB chunks
       contentType: contentType,
     });
 
     const readStream = fs.createReadStream(filePath);
-    let bytesRead = 0;
 
     readStream
-      .on("data", (chunk) => {
-        bytesRead += chunk.length;
-        console.log(
-          `Reading ${chunk.length} bytes from ${fileName}. Total: ${bytesRead}`
-        );
-      })
       .on("error", (err) => {
         console.error(`Error with read stream for ${fileName}:`, err);
         reject(err);
@@ -309,8 +312,8 @@ function uploadFile(filePath, bucket) {
 
     uploadStream
       .on("finish", () => {
-        console.log(`Upload finished for: ${fileName}`);
-        resolve(uploadStream.id); // Return the file ID
+        console.log(`Upload finished for: ${fileName}, Content-Type: ${contentType}`);
+        resolve(uploadStream.id);
       })
       .on("error", (err) => {
         console.error(`Error during upload for ${fileName}:`, err);
@@ -319,7 +322,8 @@ function uploadFile(filePath, bucket) {
 
     readStream.pipe(uploadStream);
   });
-}
+};
+
 
 function uploadResourceFile(filePath, bucket) {
   return new Promise((resolve, reject) => {
