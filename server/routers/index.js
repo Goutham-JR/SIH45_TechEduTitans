@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const cookieParser = require('cookie-parser');
+const formidable = require('formidable');
 const protectedRoutes = require('../routers/protected');
 const authRoutes = require('../routers/auth');
 const courseRoutes = require('../routers/course');
@@ -9,8 +10,6 @@ const courseRouter = require('../routers/admincourseRouter');
 const quizRoutes = require('../routers/quizRoutes');
 const passupdate = require('../routers/passwordupdate');
 const { connectDB } = require('../config/db');
-const bodyParser = require('body-parser');
-const formidable = require('formidable');
 
 // Initialize app and connect to DB
 const app = express();
@@ -36,18 +35,23 @@ app.use((req, res, next) => {
   next();
 });
 
-
+// Middleware to handle multipart/form-data only
 app.use((req, res, next) => {
-  const form = formidable({ multiples: true });
-  form.parse(req, (err, fields, files) => {
-    if (err) {
-      console.error("Error parsing form data:", err);
-      return res.status(400).json({ error: "Invalid form data" });
-    }
-    req.fields = fields;
-    req.files = files;
+  const contentType = req.headers['content-type'] || '';
+  if (contentType.includes('multipart/form-data')) {
+    const form = formidable({ multiples: true });
+    form.parse(req, (err, fields, files) => {
+      if (err) {
+        console.error('Error parsing form data:', err);
+        return res.status(400).json({ error: 'Invalid form data' });
+      }
+      req.fields = fields;
+      req.files = files;
+      next();
+    });
+  } else {
     next();
-  });
+  }
 });
 
 // Handle OPTIONS preflight requests
