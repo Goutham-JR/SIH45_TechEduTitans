@@ -1,36 +1,44 @@
 const bcrypt = require('bcrypt');
-const account = require('../models/user'); // User model
+const User = require('../models/user'); // Adjust the path to your User model as needed
 
-exports.passwordUpdate = async (req, res) => {
-  const { currentPassword, newPassword } = req.body;
-
+// Controller to update the user's password
+exports.updatePassword = async (req, res) => {
   try {
-    console.log(req.user)
-    // Find the user by ID (from the authenticated user)
-    const user = await account.findById(req.user._id);
-    console.log(user);
-    if (!user) {
-      return res.status(404).json({ error: 'User not found' });
+    const { sessionemail, currentPassword, newPassword } = req.body;
+    if (!sessionemail || !currentPassword || !newPassword) {
+      return res.status(400).json({ error: 'All fields are required.' });
     }
 
-    // Check if the current password matches the stored hashed password
-    const isMatch = await bcrypt.compare(currentPassword, user.password);
-    if (!isMatch) {
-      return res.status(400).json({ error: 'Current password is incorrect' });
+    // Find the user by email
+    const user = await User.findOne({ email: sessionemail });
+    if (!user) {
+      return res.status(404).json({ error: 'User not found.' });
+    }
+
+    // Verify the current password
+    const isPasswordValid = await bcrypt.compare(currentPassword, user.password);
+    if (!isPasswordValid) {
+      return res.status(400).json({ error: 'current password is wrong' });
+
+    }
+
+    // Check if the new password is the same as the current password
+    const isNewPasswordSame = await bcrypt.compare(newPassword, user.password);
+    if (isNewPasswordSame) {
+      return res.status(400).json({ error: 'New password cannot be the same as the current password.' });
     }
 
     // Hash the new password
-    const saltRounds = 10;
-    const salt = await bcrypt.genSalt(saltRounds);
+    const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(newPassword, salt);
 
-    // Update the user's password
+    // Update the user's password in the database
     user.password = hashedPassword;
     await user.save();
 
-    res.status(200).json({ message: 'Password updated successfully' });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Server error', errorMessage: err.message });
+    res.status(200).json({ message: 'Password updated successfully.' });
+  } catch (error) {
+    console.error('Error updating password:', error);
+    res.status(500).json({ error: 'An error occurred while updating the password.' });
   }
 };

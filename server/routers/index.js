@@ -9,6 +9,11 @@ const completedCourseRouter = require('../routers/completedCourseRouter');
 const courseRouter = require('../routers/admincourseRouter');
 const quizRoutes = require('../routers/quizRoutes');
 const passupdate = require('../routers/passwordupdate');
+const updatePersonalInfoRouter = require('../routers/updatePersonalInfo');
+const skillRouter = require("../routers/skillRouter");
+const addressRouter = require("../routers/addressRouter");
+const deleteRouter = require('../routers/deleteRouter');
+
 const { connectDB } = require('../config/db');
 
 // Initialize app and connect to DB
@@ -65,6 +70,12 @@ app.use('/api', courseRouter);
 app.use('/api/quiz', quizRoutes);
 app.use('/api/completed-courses', completedCourseRouter);
 app.use('/api/users', passupdate);
+app.use('/api/info', updatePersonalInfoRouter);
+app.use("/api/skills", skillRouter);
+app.use("/api/address", addressRouter);
+app.use('/api/account', deleteRouter);
+
+
 
 // Catch-all middleware for unhandled routes
 app.use((req, res) => {

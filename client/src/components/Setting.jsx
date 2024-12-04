@@ -11,98 +11,122 @@ import { Dialog, DialogActions, DialogContent, DialogTitle, Button } from "@mui/
 
 
 
-let sessionemail = null, sessionname = null;
+let sessionemail = null, sessionname = null, sessionphone = null;
 
-const PersonalInformation = ({ defaultName, defaultPhone, onSave }) => {
-  const [name] = useState(defaultName);
-  const [phone] = useState(defaultPhone);
+
+const PersonalInformation = ({ defaultName, defaultPhone, onUpdateInfo, onCancel }) => {
+  const [name, setName] = useState(defaultName || "");
+  const [phone, setPhone] = useState(defaultPhone || "");
   const [gender, setGender] = useState("");
   const [collegeName, setCollegeName] = useState("");
   const [dob, setDob] = useState("");
+  const [loading, setLoading] = useState(false);
   const [snackbar, setSnackbar] = useState({ open: false, message: "", severity: "" });
-
-  const calculateAge = (dob) => {
-    const birthDate = new Date(dob);
-    const today = new Date();
-    let age = today.getFullYear() - birthDate.getFullYear();
-    const monthDiff = today.getMonth() - birthDate.getMonth();
-
-    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
-      age--; // Adjust age if the current date is before the birthday
-    }
-    return age;
-  };
+  const [userDetail, setUserDetail] = useState(null);
 
   const schema = Joi.object({
     name: Joi.string().required().messages({
       "string.empty": "Name cannot be empty.",
     }),
-    phone: Joi.string()
-      .pattern(/^\d{10}$/) // Ensures exactly 10 digits
-      .required()
-      .messages({
-        "string.pattern.base": "Phone number must be 10 digits.",
-        "string.empty": "Phone number cannot be empty.",
-      }),
     gender: Joi.string().valid("male", "female", "other").required().messages({
       "string.empty": "Please select a gender.",
       "any.only": "Please select a valid gender.",
     }),
-    collegeName: Joi.string()
-      .pattern(/^[a-zA-Z\s]+$/) // Allows only letters and spaces
-      .min(3)
-      .required()
-      .messages({
-        "string.min": "College name must be at least 3 characters long.",
-        "string.empty": "College name cannot be empty.",
-        "string.pattern.base": "College name can only contain letters and spaces.",
-      }),
+    collegeName: Joi.string().required().messages({
+      "string.empty": "College name cannot be empty.",
+    }),
     dob: Joi.date().required().messages({
       "date.base": "Please select a valid date.",
       "any.required": "Date of Birth is required.",
     }),
   });
 
-  const handleSave = () => {
-    const age = calculateAge(dob);
-    if (age < 12) {
-      setSnackbar({ open: true, message: "Age must be above 12 years.", severity: "error" });
-      return;
+  const fetchUser = async () => {
+    try {
+      const isLogged = true; // Replace with your actual logic for checking login status
+      if (isLogged) {
+        const res = await axios.get(
+          "http://localhost:5000/api/protected/fetchuserdetail",
+          {
+            withCredentials: true,
+          }
+        );
+        setUserDetail(res.data.user);
+        setGender(res.data.user.gender); // Set gender from user details
+        setDob(res.data.user.dob); // Set dob from user details
+      }
+    } catch (err) {
+      console.error("Error fetching user details:", err);
     }
+  };
+
+  // Format the date of birth (if present) into a more readable format
+  const formatDate = (dateStr) => {
+    if (!dateStr) return "";
+    const date = new Date(dateStr);
+    return date.toISOString().split("T")[0]; // returns the date in "YYYY-MM-DD" format
+  };
+
+  // useEffect runs only once on mount
+  useEffect(() => {
+    fetchUser(); // Fetch user details on mount
+  }, []);
+
+  const handleSubmit = async () => {
+    setLoading(true);
 
     const { error } = schema.validate(
-      { name, phone, gender, collegeName, dob },
+      { name, gender, collegeName, dob },
       { abortEarly: false }
     );
 
     if (error) {
-      error.details.forEach((err) => {
-        setSnackbar({ open: true, message: err.message, severity: "error" });
-      });
-    } else {
-      setSnackbar({ open: true, message: "Information saved successfully!", severity: "success" });
-      onSave({ name, phone, gender, collegeName, dob });
+      const errorMessages = error.details.map((err) => err.message).join(", ");
+      setSnackbar({ open: true, message: errorMessages, severity: "error" });
+      setLoading(false);
+      return;
+    }
+
+    try {
+      console.log(sessionemail);
+      const response = await axios.post(
+        "http://localhost:5000/api/info/update-info",
+        { sessionemail, name, phone, gender, collegeName, dob },
+        { withCredentials: true }
+      );
+
+      setSnackbar({ open: true, message: response.data.message, severity: "success" });
+      //onUpdateInfo();
+    } catch (err) {
+      const errorMessage = err.response?.data?.error || "An error occurred while updating.";
+      console.log(err);
+      setSnackbar({ open: true, message: errorMessage, severity: "error" });
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <div className="personal-information mt-8">
+    <div className="personal-information mt-8 z-0">
+      <h3 className="text-lg font-semibold text-gray-100">Update Personal Information</h3>
       <div className="mb-4">
         <label className="block text-gray-400">Name</label>
         <input
           type="text"
-          value={name}
-          readOnly
+          placeholder="Enter your name"
           className="w-full sm:w-96 p-2 mt-2 rounded bg-gray-700 text-gray-300 cursor-not-allowed"
+          value={userDetail?.name}
+          onChange={(e) => setName(e.target.value)}
         />
       </div>
       <div className="mb-4">
         <label className="block text-gray-400">Phone Number</label>
         <input
           type="text"
-          value={phone}
-          readOnly
+          placeholder="Enter your phone number"
           className="w-full sm:w-96 p-2 mt-2 rounded bg-gray-700 text-gray-300 cursor-not-allowed"
+          value={userDetail?.phoneNumber}
+          onChange={(e) => setPhone(e.target.value)}
         />
       </div>
       <div className="mb-4">
@@ -148,26 +172,35 @@ const PersonalInformation = ({ defaultName, defaultPhone, onSave }) => {
         <input
           type="text"
           placeholder="Enter your college name"
-          value={collegeName}
-          onChange={(e) => setCollegeName(e.target.value)}
           className="w-full sm:w-96 p-2 mt-2 rounded bg-gray-700 text-gray-300"
+          value={userDetail?.collegeName}
+          onChange={(e) => setCollegeName(e.target.value)}
         />
       </div>
       <div className="mb-4">
         <label className="block text-gray-400">Date of Birth</label>
         <input
           type="date"
-          value={dob}
-          onChange={(e) => setDob(e.target.value)}
           className="w-full sm:w-96 p-2 mt-2 rounded bg-gray-700 text-gray-300"
+          value={formatDate(userDetail?.dob)} // Format the dob before displaying
+          onChange={(e) => setDob(e.target.value)}
         />
       </div>
       <div className="flex gap-4">
         <button
-          onClick={handleSave}
-          className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded transition duration-200 w-full sm:w-auto"
+          onClick={handleSubmit}
+          disabled={loading}
+          className={`${
+            loading ? "bg-indigo-400" : "bg-indigo-600 hover:bg-indigo-700"
+          } text-white font-bold py-2 px-4 rounded transition duration-200 w-full sm:w-auto`}
         >
-          Save Changes
+          {loading ? "Saving..." : "Save Changes"}
+        </button>
+        <button
+          onClick={onCancel}
+          className="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded transition duration-200 w-full sm:w-auto"
+        >
+          Cancel
         </button>
       </div>
 
@@ -192,12 +225,12 @@ const PersonalInformation = ({ defaultName, defaultPhone, onSave }) => {
 
 
 
-
-const PasswordUpdate = ({ onChangePassword, onCancel }) => {
+const PasswordUpdate = ({  onChangePassword, onCancel }) => {
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: '' });
+  const [loading, setLoading] = useState(false); // Loading state
 
   const schema = Joi.object({
     currentPassword: Joi.string().required().messages({
@@ -222,31 +255,41 @@ const PasswordUpdate = ({ onChangePassword, onCancel }) => {
   });
 
   const handleSubmit = async () => {
+    setLoading(true);
     const { error } = schema.validate(
       { currentPassword, newPassword, confirmPassword },
       { abortEarly: false }
     );
 
     if (error) {
-      error.details.forEach((err) => {
-        setSnackbar({ open: true, message: err.message, severity: 'error' });
-      });
-    } else {
-      try {
-        const response = await axios.post('http://localhost:5000/api/users/update-password', {
-           currentPassword, newPassword} , {
-            withCredentials: true,
-          } 
-        );
-  
-
-        setSnackbar({ open: true, message: response.data.message, severity: 'success' });
-        onChangePassword(); 
-      } catch (err) {
-        console.log(err);
-        setSnackbar({ open: true, message: err.response?.data?.error || 'An error occurred', severity: 'error' });
-      }
+      const errorMessages = error.details.map((err) => err.message).join(', ');
+      setSnackbar({ open: true, message: errorMessages, severity: 'error' });
+      setLoading(false);
+      return;
     }
+    
+    try {
+      const response = await axios.post(
+        'http://localhost:5000/api/users/update-password',
+        { sessionemail, currentPassword, newPassword }, // Include sessionemail in the payload
+        { withCredentials: true }
+      );
+
+      setSnackbar({ open: true, message: response.data.message, severity: 'success' });
+      onChangePassword();
+    } catch (err) {
+      const status = err.response?.status;
+  const errorMessage =
+    status === 400 && err.response?.data?.error === 'Current password is incorrect.'
+      ? 'Current password is incorrect.'
+      : status === 401
+      ? 'Unauthorized. Please log in again.'
+      : err.response?.data?.error || 'An error occurred';
+      setSnackbar({ open: true, message: errorMessage, severity: 'error' });
+    } finally {
+      setLoading(false);
+    }
+
   };
 
   return (
@@ -285,9 +328,12 @@ const PasswordUpdate = ({ onChangePassword, onCancel }) => {
       <div className="flex gap-4">
         <button
           onClick={handleSubmit}
-          className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded transition duration-200 w-full sm:w-auto"
+          disabled={loading}
+          className={`${
+            loading ? 'bg-indigo-400' : 'bg-indigo-600 hover:bg-indigo-700'
+          } text-white font-bold py-2 px-4 rounded transition duration-200 w-full sm:w-auto`}
         >
-          Save New Password
+          {loading ? 'Saving...' : 'Save New Password'}
         </button>
         <button
           onClick={onCancel}
@@ -315,8 +361,6 @@ const PasswordUpdate = ({ onChangePassword, onCancel }) => {
     </div>
   );
 };
-
-
 
 
 
@@ -468,41 +512,93 @@ const SettingSection = ({ icon: Icon, title, children }) => {
 
 
 const SkillInput = () => {
-  const [skills, setSkills] = useState([]); 
-  const [newSkill, setNewSkill] = useState(""); 
-  const [snackbar, setSnackbar] = useState({ open: false, message: "", severity: "" }); 
+  const [skills, setSkills] = useState([]); // Initialize as empty array
+  const [newSkill, setNewSkill] = useState("");
+  const [snackbar, setSnackbar] = useState({ open: false, message: "", severity: "" });
 
   const skillSchema = Joi.string()
-    .pattern(/^[A-Za-z].*/) // Skill must start with a letter and be at least 3 characters
-    .required()
-    .messages({
-      "string.pattern.base": "Skill must start with a letter.",
-      "string.empty": "Skill cannot be empty.",
-      "any.required": "Skill is required.",
-    });
+  .pattern(/^[A-Za-z][A-Za-z0-9\s!@#$%^&*(),.?":{}|<>_\-+]*$/) // Updated to allow plus (+) and hyphen (-) and other special characters
+  .required()
+  .messages({
+    "string.empty": "Skill cannot be empty.",
+    "any.required": "Skill is required.",
+    "string.pattern.base": "Skill must start with a letter and can contain letters, numbers, and special characters like !@#$%^&*()."
+  });
 
+
+  // Show Snackbar
   const showSnackbar = (message, severity) => {
     setSnackbar({ open: true, message, severity });
     setTimeout(() => setSnackbar({ open: false, message: "", severity: "" }), 3000);
   };
 
-  const addSkill = () => {
-    const { error } = skillSchema.validate(newSkill);
-
-    if (error) {
-      showSnackbar(error.message, "error"); 
-    } else if (skills.includes(newSkill)) {
-      showSnackbar("Skill already added.", "warning");
-    } else {
-      setSkills((prevSkills) => [...prevSkills, newSkill]);
-      setNewSkill(""); 
-      showSnackbar("Skill added successfully!", "success");
+  // Fetch User and Skills on Component Mount
+  const fetchUser = async () => {
+    try {
+      const isLogged = true; // Replace with your actual logic for checking login status
+      if (isLogged) {
+        const res = await axios.get(
+          "http://localhost:5000/api/protected/fetchuserdetail",
+          {
+            withCredentials: true,
+          }
+        );
+        // Ensure 'skills' is always an array to prevent undefined errors
+        setSkills(res.data.skills || []); // Fallback to empty array if no skills
+      }
+    } catch (err) {
+      console.error("Error fetching user details:", err);
+      setSkills([]); // Fallback to empty array in case of error
     }
   };
 
-  const removeSkill = (skill) => {
-    setSkills(skills.filter((item) => item !== skill));
-    showSnackbar("Skill removed.", "error");
+  // useEffect runs only once on mount
+  useEffect(() => {
+    fetchUser(); // Fetch user details and skills on mount
+  }, []);
+
+  // Add Skill
+  const addSkill = async () => {
+    const skillToAdd = newSkill.trim().toLowerCase(); // Convert the skill to lowercase
+
+    const { error } = skillSchema.validate(skillToAdd);
+
+    if (error) {
+      showSnackbar(error.message, "error");
+      return;
+    }
+
+    // Check if the skill already exists (case-insensitive check)
+    if (skills.map(skill => skill.toLowerCase()).includes(skillToAdd)) {
+      showSnackbar("Skill already exists.", "error");
+      return;
+    }
+
+    try {
+      const response = await axios.post("http://localhost:5000/api/skills/add-skill", {
+        sessionemail,
+        skill: skillToAdd,
+      });
+      setSkills(response.data.skills);
+      setNewSkill("");
+      showSnackbar("Skill added successfully!", "success");
+    } catch (err) {
+      showSnackbar(err.response?.data?.error || "Failed to add skill.", "error");
+    }
+  };
+
+  // Remove Skill
+  const removeSkill = async (skill) => {
+    try {
+      const response = await axios.post("http://localhost:5000/api/skills/remove-skill", {
+        sessionemail,
+        skill,
+      });
+      setSkills(response.data.skills);
+      showSnackbar("Skill removed successfully.", "success");
+    } catch (err) {
+      showSnackbar(err.response?.data?.error || "Failed to remove skill.", "error");
+    }
   };
 
   return (
@@ -511,11 +607,11 @@ const SkillInput = () => {
       <Snackbar
         open={snackbar.open}
         autoHideDuration={3000}
-        onClose={() => setSnackbar({ open: false, message: '', severity: '' })}
-        anchorOrigin={{ vertical: 'top', horizontal: 'center' }} 
+        onClose={() => setSnackbar({ open: false, message: "", severity: "" })}
+        anchorOrigin={{ vertical: "top", horizontal: "center" }}
       >
         <Alert
-          onClose={() => setSnackbar({ open: false, message: '', severity: '' })}
+          onClose={() => setSnackbar({ open: false, message: "", severity: "" })}
           severity={snackbar.severity}
           variant="filled"
         >
@@ -560,7 +656,7 @@ const SkillInput = () => {
                 key={index}
                 className="flex items-center justify-between bg-gray-700 p-2 rounded-md"
               >
-                <span className="text-white">{skill}</span>
+                <span className="text-white">{skill.toUpperCase()}</span> {/* Convert to uppercase for display */}
                 <button
                   onClick={() => removeSkill(skill)}
                   className="text-red-600 hover:text-red-800"
@@ -579,13 +675,10 @@ const SkillInput = () => {
 
 
 const Address = () => {
-  const [address, setAddress] = useState({
-    line1: "",
-    state: "",
-    city: "",
-    pincode: "",
-  });
-
+  const [line1, setLine1] = useState("");
+  const [state, setState] = useState("");
+  const [city, setCity] = useState("");
+  const [pincode, setPincode] = useState("");
   const [snackbar, setSnackbar] = useState({
     open: false,
     message: "",
@@ -601,8 +694,7 @@ const Address = () => {
   ];
 
   const addressSchema = Joi.object({
-    line1: Joi.string().alphanum().min(3).max(100).required().messages({
-      "string.alphanum": "Address Line 1 must contain only alphabets and numbers.",
+    line1: Joi.string().min(3).max(100).required().messages({
       "string.empty": "Address Line 1 cannot be empty.",
       "any.required": "Address Line 1 is required.",
       "string.min": "Address Line 1 must be at least 3 characters long.",
@@ -629,18 +721,58 @@ const Address = () => {
     setTimeout(() => setSnackbar({ open: false, message: "", severity: "" }), 3000);
   };
 
-  const handleSubmit = () => {
-    const { error } = addressSchema.validate(address);
+  // Fetch user details
+  const fetchUser = async () => {
+    try {
+      const isLogged = true; // Replace with actual logic to check login status
+      if (isLogged) {
+        const res = await axios.get(
+          "http://localhost:5000/api/protected/fetchuserdetail",
+          { withCredentials: true }
+        );
+        const { address } = res.data;
+        setLine1(address.line1 || "");
+        setState(address.state || "");
+        setCity(address.city || "");
+        setPincode(address.pincode || "");
+      }
+    } catch (err) {
+      console.error("Error fetching user details:", err);
+    }
+  };
+
+  useEffect(() => {
+    fetchUser();
+  }, []);
+
+  // Save address to backend
+  const handleSubmit = async () => {
+    const { error } = addressSchema.validate({ line1, state, city, pincode });
     if (error) {
       showSnackbar(error.message, "error");
-    } else {
-      showSnackbar("Address saved successfully!", "success");
+      return;
+    }
+
+    try {
+      const response = await axios.post(
+        "http://localhost:5000/api/address", // Endpoint for updating address
+        { sessionemail, line1, state, city, pincode}, // Replace with session email
+        { withCredentials: true }
+      );
+
+      if (response.status === 200) {
+        showSnackbar(response.data.message, "success");
+      } else {
+        showSnackbar(response.data.message, "error");
+      }
+    } catch (error) {
+      console.error("Error updating address:", error);
+      showSnackbar(error.response?.data?.message || "Error updating address.", "error");
     }
   };
 
   return (
     <div className="pb-10">
-      {/* Snackbar for displaying validation or success message */}
       <Snackbar
         open={snackbar.open}
         autoHideDuration={3000}
@@ -657,19 +789,15 @@ const Address = () => {
       </Snackbar>
 
       <div className="bg-gray-800 bg-opacity-50 backdrop-blur-md shadow-lg rounded-xl p-6 border border-gray-700 space-y-6 pb-8">
-        {/* Address Header */}
-        <h2 className="text-2xl font-bold text-white flex items-center">
-          <LocationOn className="mr-2" />
-          Address Information
-        </h2>
+        <h2 className="text-2xl font-bold text-white flex items-center">Address Information</h2>
 
         {/* Address Line 1 */}
         <div className="flex flex-col">
           <label className="text-white">Address Line 1</label>
           <input
             type="text"
-            value={address.line1}
-            onChange={(e) => setAddress({ ...address, line1: e.target.value })}
+            value={line1}
+            onChange={(e) => setLine1(e.target.value)}
             className="p-2 w-full rounded-md text-gray-900"
             placeholder="Enter address line 1"
           />
@@ -690,8 +818,8 @@ const Address = () => {
         <div className="flex flex-col mt-4">
           <label className="text-white">State</label>
           <select
-            value={address.state}
-            onChange={(e) => setAddress({ ...address, state: e.target.value })}
+            value={state}
+            onChange={(e) => setState(e.target.value)}
             className="p-2 w-full rounded-md text-gray-900"
           >
             <option value="">Select State</option>
@@ -708,8 +836,8 @@ const Address = () => {
           <label className="text-white">City</label>
           <input
             type="text"
-            value={address.city}
-            onChange={(e) => setAddress({ ...address, city: e.target.value })}
+            value={city}
+            onChange={(e) => setCity(e.target.value)}
             className="p-2 w-full rounded-md text-gray-900"
             placeholder="Enter city"
           />
@@ -720,8 +848,8 @@ const Address = () => {
           <label className="text-white">Pincode</label>
           <input
             type="text"
-            value={address.pincode}
-            onChange={(e) => setAddress({ ...address, pincode: e.target.value })}
+            value={pincode}
+            onChange={(e) => setPincode(e.target.value)}
             className="p-2 w-full rounded-md text-gray-900"
             placeholder="Enter pincode"
           />
@@ -742,13 +870,25 @@ const Address = () => {
 };
 
 
+
+
 const DangerZone = () => {
   const [showConfirm, setShowConfirm] = useState(false); 
   const [snackbar, setSnackbar] = useState({ open: false, message: "", severity: "" });
+  const [sessionEmail, setSessionEmail] = useState(localStorage.getItem('sessionEmail')); // Assuming you store session email in localStorage
 
-  const handleDeleteAccount = (confirm) => {
+  const handleDeleteAccount = async (confirm) => {
     if (confirm) {
-      setSnackbar({ open: true, message: "Your account has been deleted permanently.", severity: "success" });
+      try {
+        const response = await axios.post(
+          "http://localhost:5000/api/account/delete",
+          { sessionemail}, // Replace with session email
+        { withCredentials: true }
+        );
+        setSnackbar({ open: true, message: response.data.message, severity: "success" });
+      } catch (error) {
+        setSnackbar({ open: true, message: error.response.data.message || "Error deleting account.", severity: "error" });
+      }
     } else {
       setSnackbar({ open: true, message: "Account deletion canceled.", severity: "info" });
     }
@@ -806,7 +946,7 @@ const DangerZone = () => {
             variant="outlined"
             className="px-6 py-2"
           >
-            yes
+            Yes
           </Button>
           <Button
             onClick={() => handleDeleteAccount(false)}
@@ -838,13 +978,10 @@ const DangerZone = () => {
   );
 };
 
+
 const SettingsPage = () => {
   const [activeSection, setActiveSection] = useState("Profile");
-  const [user, setUser] = useState({
-    name: "John Doe",
-    email: "john.doe@example.com",
-    avatar: "https://randomuser.me/api/portraits/men/3.jpg",
-  });
+  
 
   const [userDetail, setUserDetail] = useState(null);
   const fetchUser = async () => {
@@ -858,7 +995,6 @@ const SettingsPage = () => {
           }
         );
         setUserDetail(res.data.user);
-        console.log(res.data.user);
       }
     } catch (err) {
       console.error("Error fetching user details:", err);
@@ -872,6 +1008,7 @@ const SettingsPage = () => {
 
   sessionemail = userDetail?.email || 'no email';
   sessionname = userDetail?.name || 'no name';
+  sessionphone = userDetail?.phone || 'no phone';
 
 
   const [preferences, setPreferences] = useState({
@@ -962,7 +1099,7 @@ const SettingsPage = () => {
         <div className="w-3/4 max-w-3xl mx-auto py-12 px-4 lg:px-8">
           <SettingSection icon={User} title="Profile">
             <ProfileInformation
-              user={user}
+              user={sessionemail}
               onSave={handleSaveProfile}
               onCancel={() => console.log("Profile Edit Cancelled")}
             />
@@ -977,8 +1114,8 @@ const SettingsPage = () => {
 
           <SettingSection icon={User} title="Personal information">
           <PersonalInformation 
-            defaultName="John Doe" 
-            defaultPhone="9876543210" 
+            defaultName={sessionname}
+            defaultPhone={sessionphone}
             onSave={(data) => console.log('Saved Data:', data)} 
           />
           </SettingSection>

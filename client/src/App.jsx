@@ -26,7 +26,8 @@ import StudentAssignment from './pages/StudentAssignment'
 import StudentQuizzes from './pages/StudentQuizzes'
 import StudentLeaderBoard from './pages/StudentLeaderBoard';
 import StudentCalender from './pages/StudentCalender';
-import UploadCourse from './pages/CourseUpload'
+import UploadCourse from './pages/CourseUpload';
+import Setting from './components/setting';
 function App() {
   axios.defaults.withCredentials = true;
   return (
@@ -59,6 +60,7 @@ function App() {
         <Route path="/StudentQuizzes" element={< StudentQuizzes/>} />
         <Route path="/StudentLeaderBoard" element={< StudentLeaderBoard/>} />
         <Route path="/StudentCalender" element={< StudentCalender/>} />
+        <Route path="/Setting" element={< Setting/>} />
       </Routes>
     </BrowserRouter>
   );
