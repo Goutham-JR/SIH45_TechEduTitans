@@ -1,6 +1,7 @@
 const express = require('express');
 const { getCourses, updateCourseStatus, deleteCourse } = require('../controllers/admincourseController');
 
+const mongoose = require("mongoose");
 const router = express.Router();
 
 router.get('/courses', getCourses); // Get all courses

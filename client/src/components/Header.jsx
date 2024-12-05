@@ -17,6 +17,7 @@ import {
   ListItemText,
   Avatar,
 } from "@mui/material";
+import { Search } from "lucide-react";
 import Joi from "joi";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
@@ -87,8 +88,55 @@ const signUpSchema = Joi.object({
 }).with("password", "confirmPassword"); // This ensures both password and confirmPassword are used together
 
 const Header = () => {
-
   const navigate = useNavigate();
+
+  //AUTO FILL SEARCH BAR
+  const [searchTerm, setSearchTerm] = useState("");
+  const [suggestions, setSuggestions] = useState([]);
+  const [searchAnchorEl, setSearchAnchorEl] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
+
+  const [activePopover, setActivePopover] = useState("");
+  const [popoverAnchorEl, setPopoverAnchorEl] = useState(null);
+
+  const fetchSuggestions = async (query) => {
+    setIsLoading(true);
+    try {
+      const response = await fetch(
+        `http://localhost:5000/api/course/search?query=${query}`
+      );
+      const data = await response.json();
+      setSuggestions(data);
+    } catch (error) {
+      console.error("Error fetching suggestions:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleSearchChange = (event) => {
+    const query = event.target.value;
+    setSearchTerm(query);
+
+    if (query.length > 2) {
+      fetchSuggestions(query);
+      setSearchAnchorEl(event.currentTarget); // Open Search Dropdown
+    } else {
+      setSuggestions([]);
+      setSearchAnchorEl(null); // Close Search Dropdown
+    }
+  };
+
+  const handlePopoverOpen = (event, popoverType) => {
+    setActivePopover(popoverType);
+    setPopoverAnchorEl(event.currentTarget);
+  };
+
+  const handlePopoverClose = () => {
+    setActivePopover("");
+    setPopoverAnchorEl(null);
+  };
+
   const [openSignIn, setOpenSignIn] = useState(false);
   const [openSignUp, setOpenSignUp] = useState(false);
 
@@ -121,6 +169,15 @@ const Header = () => {
 
     fetchUser();
   }, [navigate]);
+
+  const handleSearchKeyDown = (event) => {
+    if (event.key === "Enter") {
+      event.preventDefault();
+      if (searchTerm.trim()) {
+        navigate("/searchlist", { state: { query: searchTerm.trim() } });
+      }
+    }
+  };
 
   //SIGNIN
   const [loginformData, setloginFormData] = useState({
@@ -240,7 +297,6 @@ const Header = () => {
 
   //WISHLIST, NOTIFICATION, ACCOUNT
   const [anchorEl, setAnchorEl] = useState(null); // Single state to manage active popover
-  const [activePopover, setActivePopover] = useState(""); // Tracks which popover is active
 
   // Handlers
   const handleHover = (event, popover) => {
@@ -299,25 +355,100 @@ const Header = () => {
             Tech Edu Titans
           </Typography>
 
-          {/* Centered Search Bar */}
-          <Box
-            sx={{
-              flexGrow: 1,
-              mx: 4,
-              display: "flex",
-              justifyContent: "center",
-            }}
-          >
-            <TextField
-              variant="outlined"
-              size="small"
-              placeholder="Search..."
-              sx={{
-                width: "50%",
-                backgroundColor: "#ffffff",
-                borderRadius: 1,
+          {/* Search Bar */}
+          <Box sx={{ position: "relative", flexGrow: 1, mx: 4 }}>
+            <Search
+              style={{
+                position: "absolute",
+                left: 10,
+                top: "50%",
+                transform: "translateY(-50%)",
+                color: "#aaa",
               }}
             />
+            <input
+              type="text"
+              placeholder="Search courses"
+              value={searchTerm}
+              onChange={handleSearchChange}
+              onKeyDown={handleSearchKeyDown}
+              className="w-full pl-10 pr-48 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-700 text-white"
+            />
+            {isLoading && (
+              <div
+                style={{
+                  position: "absolute",
+                  right: 10,
+                  top: "50%",
+                  transform: "translateY(-50%)",
+                  color: "#aaa",
+                }}
+              >
+                Loading...
+              </div>
+            )}
+
+            {/* Search Suggestions Dropdown */}
+            <Popover
+              open={Boolean(searchAnchorEl && suggestions.length > 0)}
+              anchorEl={searchAnchorEl}
+              onClose={() => setSearchAnchorEl(null)}
+              anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
+              transformOrigin={{ vertical: "top", horizontal: "left" }}
+              PaperProps={{
+                sx: {
+                  zIndex: 1300,
+                  width: searchAnchorEl ? searchAnchorEl.offsetWidth : "100%",
+                  mt: 1,
+                  maxHeight: 200, // Restrict height
+                  overflowY: "auto", // Enable scrolling but hide scrollbar
+                  backgroundColor: "#2d3748",
+                  borderRadius: 2,
+                  boxShadow: "0px 4px 10px rgba(0, 0, 0, 0.2)",
+                  padding: "8px",
+                  "&::-webkit-scrollbar": { display: "none" }, // Hide scrollbar in Webkit-based browsers
+                  msOverflowStyle: "none", // Hide scrollbar in IE/Edge
+                  scrollbarWidth: "none", // Hide scrollbar in Firefox
+                },
+              }}
+            >
+              <Box>
+                {suggestions.length > 0 ? (
+                  suggestions.map((suggestion, index) => (
+                    <Typography
+                      key={index}
+                      onClick={() => {
+                        setSearchTerm(suggestion.name || suggestion);
+                        setSearchAnchorEl(null);
+                      }}
+                      sx={{
+                        px: 2,
+                        py: 1,
+                        color: "#fff",
+                        borderRadius: 1,
+                        "&:hover": {
+                          backgroundColor: "#4a5568",
+                          cursor: "pointer",
+                        },
+                      }}
+                    >
+                      {suggestion.name || suggestion}
+                    </Typography>
+                  ))
+                ) : (
+                  <Typography
+                    sx={{
+                      px: 2,
+                      py: 1,
+                      color: "#aaa",
+                      textAlign: "center",
+                    }}
+                  >
+                    No suggestions found.
+                  </Typography>
+                )}
+              </Box>
+            </Popover>
           </Box>
 
           {/* Buttons */}
@@ -516,7 +647,7 @@ const Header = () => {
                       <ListItem button="true">
                         <ListItemText primary="My Course" />
                       </ListItem>
-                    )}                    
+                    )}
                     <ListItem button="true">
                       <ListItemText primary="Wishlist" />
                     </ListItem>

@@ -77,6 +77,8 @@ app.use('/api/account', deleteRouter);
 
 
 
+
+
 // Catch-all middleware for unhandled routes
 app.use((req, res) => {
   console.log(`Unhandled request: ${req.method} ${req.originalUrl}`);

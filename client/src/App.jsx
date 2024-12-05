@@ -14,7 +14,6 @@ import ResultsAndProgressPage from './pages/ResultsProgress';
 import Logout from './components/Logout';
 import QuizPage from './pages/QuizPage';
 import BadgesAndAchievementsPage from './pages/BadgeAchivements';
-import SupportPage from './pages/SupportHelp';
 import Testing from './components/Testing';
 import ForgotPassword from './components/ForgotPassword';
 import Admin from './components/admin';
@@ -28,6 +27,9 @@ import StudentLeaderBoard from './pages/StudentLeaderBoard';
 import StudentCalender from './pages/StudentCalender';
 import UploadCourse from './pages/CourseUpload';
 import Setting from './components/setting';
+import SearchList from './pages/SearchList';
+import CoursePage from './pages/CoursePage'
+
 function App() {
   axios.defaults.withCredentials = true;
   return (
@@ -61,6 +63,8 @@ function App() {
         <Route path="/StudentLeaderBoard" element={< StudentLeaderBoard/>} />
         <Route path="/StudentCalender" element={< StudentCalender/>} />
         <Route path="/Setting" element={< Setting/>} />
+        <Route path="/SearchList" element={< SearchList/>} />
+        <Route path="/CoursePage" element={< CoursePage/>} />
       </Routes>
     </BrowserRouter>
   );

@@ -324,6 +324,27 @@ const uploadFile = async (filePath, bucket, providedMimeType = null) => {
   });
 };
 
+exports.seachcoursebyname = async (req, res) => {
+  const query = req.query.query; // Get the search term from the query parameter
+  if (!query) {
+    return res.status(400).json({ error: "Query parameter is required" });
+  }
+  try {
+    const db = mongoose.connection.db; // Get the native MongoDB driver
+    const collection = db.collection("courses"); // Replace with your collection name
+    const results = await collection
+      .find({ title: { $regex: query, $options: "i" } }) // Case-insensitive search
+      .limit(10)
+      .toArray();
+
+    res.json(results); // Send the full course details
+  } catch (error) {
+    console.error("Error fetching search results:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+
 
 function uploadResourceFile(filePath, bucket) {
   return new Promise((resolve, reject) => {
@@ -360,3 +381,31 @@ function uploadResourceFile(filePath, bucket) {
     readStream.pipe(uploadStream);
   });
 }
+
+
+exports.getCourseById = async (req, res) => {
+  try {
+    // Extract the course ID from the request parameters
+    const { id } = req.params;
+
+    // Fetch the course details from the database
+    const course = await Course.findById(id);
+
+    // Check if the course exists
+    if (!course) {
+      return res.status(404).json({ error: "Course not found" });
+    }
+
+    // Respond with the course details
+    res.status(200).json(course);
+  } catch (err) {
+    console.error("Error fetching course details:", err);
+
+    // Handle invalid IDs or server errors
+    if (err.name === "CastError") {
+      return res.status(400).json({ error: "Invalid course ID" });
+    }
+
+    res.status(500).json({ error: "Server error" });
+  }
+};

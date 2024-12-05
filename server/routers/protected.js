@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const verifyToken = require('../middlewares/verifyToken'); // Middleware to verify token
-const {userdetail} = require('../controllers/getUserDetail');
+const {userdetail, username} = require('../controllers/getUserDetail');
 
 
 
@@ -11,4 +11,5 @@ router.get('/check-auth', verifyToken, (req, res) => {
 
 
 router.get('/fetchuserdetail', verifyToken ,userdetail);
+router.get('/username/:id', verifyToken ,username);
 module.exports = router;
