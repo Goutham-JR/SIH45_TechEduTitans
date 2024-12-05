@@ -7,6 +7,26 @@ import axios from "axios";
 const OverviewPage = () => {
   const [userId, setUserId] = useState(null);
   const [couseId, setCourseId] = useState(null);
+  const [keywords, setkeywords] = useState(null);
+  const [courselanguage, setcourselanguage] = useState(null);
+  const [level, setLevel] = useState(null);
+
+  const finalizeCourses = async () => {
+    try {
+      const response = await fetch(
+        "http://localhost:5000/api/course/finalize",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ couseId, keywords, courselanguage, level }),
+        }
+      );
+    } catch (err) {
+      console.log(err);
+    }
+  };
   // Fetch current user ID
   useEffect(() => {
     const fetchUserId = async () => {
@@ -53,6 +73,7 @@ const OverviewPage = () => {
       thumbnail: null,
       video: null,
       resources: null,
+      duration: 0,
       loading: false, // New video starts with loading set to false
     });
 
@@ -88,7 +109,12 @@ const OverviewPage = () => {
     const updatedCourses = [...courses];
     const week = updatedCourses[courseIndex].weeks[weekIndex];
 
-    if (!couseId || !week.quiz || week.quiz.questions.length === 0) {
+    if (
+      !couseId ||
+      !week.quiz ||
+      week.quiz.questions.length === 0 ||
+      !week.title
+    ) {
       alert("Please ensure a course ID and valid quiz questions are provided!");
       return;
     }
@@ -97,6 +123,7 @@ const OverviewPage = () => {
       const formData = new FormData();
       formData.append("courseId", couseId); // Ensure courseId is set
       formData.append("weekNumber", weekIndex + 1); // Week number (1-based)
+      formData.append("weekTitle", week.title); // Week title
       formData.append("questions", JSON.stringify(week.quiz.questions)); // Serialize quiz questions
 
       // Send POST request to /api/course/uploadquiz
@@ -125,6 +152,7 @@ const OverviewPage = () => {
   const submitVideo = async (courseIndex, weekIndex, videoIndex) => {
     try {
       const updatedCourses = [...courses];
+      const week = updatedCourses[courseIndex].weeks[weekIndex];
       const video =
         updatedCourses[courseIndex].weeks[weekIndex].videos[videoIndex];
 
@@ -141,45 +169,53 @@ const OverviewPage = () => {
         resources,
       } = video;
 
-      if (!title || !description || !thumbnail || !videoFile) {
+      if (!title || !description || !thumbnail || !videoFile || !week.title) {
         alert(
           "Please fill all required fields and upload the necessary files."
         );
         return;
       }
 
-      // Set loading state to true for this specific video
-      video.loading = true;
-      setCourses(updatedCourses);
+      const videoElement = document.createElement("video");
+      videoElement.src = URL.createObjectURL(videoFile);
+      videoElement.onloadedmetadata = async () => {
+        const videoDuration = videoElement.duration;
 
-      const formData = new FormData();
-      formData.append("courseId", couseId);
-      formData.append("weekNumber", weekIndex + 1); // Week number (1-based)
-      formData.append("title", title);
-      formData.append("description", description);
-      formData.append("thumbnail", thumbnail);
-      formData.append("video", videoFile);
+        // Set loading state to true for this specific video
+        video.loading = true;
+        setCourses(updatedCourses);
 
-      if (resources) {
-        formData.append("resource", resources);
-      }
+        const formData = new FormData();
+        formData.append("courseId", couseId);
+        formData.append("weekNumber", weekIndex + 1); // Week number (1-based)
+        formData.append("weekTitle", week.title);
+        formData.append("title", title);
+        formData.append("description", description);
+        formData.append("thumbnail", thumbnail);
+        formData.append("video", videoFile);
+        formData.append("duration", videoDuration);
 
-      const response = await axios.post(
-        "http://localhost:5000/api/course/uploadweeks",
-        formData,
-        {
-          headers: {
-            "Content-Type": "multipart/form-data",
-          },
+        if (resources) {
+          formData.append("resource", resources);
         }
-      );
 
-      console.log("Video uploaded successfully:", response.data);
-      alert("Video uploaded successfully!");
+        const response = await axios.post(
+          "http://localhost:5000/api/course/uploadweeks",
+          formData,
+          {
+            headers: {
+              "Content-Type": "multipart/form-data",
+            },
+          }
+        );
 
-      // Set loading state to false after successful upload
-      video.loading = true; // Lock it to "Uploaded" state
-      setCourses(updatedCourses);
+        console.log("Video uploaded successfully:", response.data);
+        alert("Video uploaded successfully!");
+
+        // Set loading state to false after successful upload
+        video.loading = true; // Lock it to "Uploaded" state
+        setCourses(updatedCourses);
+      };
     } catch (error) {
       console.error("Error uploading video:", error);
       alert("Failed to upload video. Please try again.");
@@ -208,34 +244,59 @@ const OverviewPage = () => {
       setThumbnail(acceptedFiles[0]);
       console.log("Course thumbnail uploaded:", acceptedFiles[0]);
     } else if (dropzoneType && dropzoneType.includes("-")) {
-      // Handle video-related uploads in step 3
       const [courseIndex, weekIndex, videoIndex, fileType] =
         dropzoneType.split("-");
 
-      if (dropzoneType && dropzoneType.includes("-")) {
-        const [courseIndex, weekIndex, videoIndex, fileType] =
-          dropzoneType.split("-");
+      if (
+        updatedCourses[courseIndex] &&
+        updatedCourses[courseIndex].weeks &&
+        updatedCourses[courseIndex].weeks[weekIndex] &&
+        updatedCourses[courseIndex].weeks[weekIndex].videos &&
+        updatedCourses[courseIndex].weeks[weekIndex].videos[videoIndex]
+      ) {
+        if (fileType === "video") {
+          const videoFile = acceptedFiles[0];
+          const video =
+            updatedCourses[courseIndex].weeks[weekIndex].videos[videoIndex];
+          const week = updatedCourses[courseIndex].weeks[weekIndex];
 
-        if (
-          updatedCourses[courseIndex] &&
-          updatedCourses[courseIndex].weeks &&
-          updatedCourses[courseIndex].weeks[weekIndex] &&
-          updatedCourses[courseIndex].weeks[weekIndex].videos &&
-          updatedCourses[courseIndex].weeks[weekIndex].videos[videoIndex]
-        ) {
-          // Update the specified field (e.g., thumbnail or video) for the video
+          // Temporary video element to calculate duration
+          const videoElement = document.createElement("video");
+          videoElement.src = URL.createObjectURL(videoFile);
+          videoElement.onloadedmetadata = () => {
+            const newDuration = videoElement.duration; // New video duration in seconds
+
+            // Subtract the old video duration if it exists
+            if (video.duration) {
+              week.totalLength = (week.totalLength || 0) - video.duration;
+            }
+
+            // Add the new video duration
+            week.totalLength = (week.totalLength || 0) + newDuration;
+
+            // Update video object with new file and duration
+            video.video = videoFile;
+            video.duration = newDuration; // Store the duration with the video
+
+            console.log(
+              `Updated total length for week ${weekIndex + 1}:`,
+              week.totalLength
+            );
+
+            setCourses([...updatedCourses]); // Update state after duration is loaded
+          };
+        } else {
+          // Handle other file types like thumbnail or resources
           updatedCourses[courseIndex].weeks[weekIndex].videos[videoIndex][
             fileType
           ] = acceptedFiles[0];
-
           console.log(
             `Updated ${fileType} for video:`,
             updatedCourses[courseIndex].weeks[weekIndex].videos[videoIndex]
           );
-          setCourses(updatedCourses); // Update state
-        } else {
-          console.error("Invalid indices or video object.");
         }
+      } else {
+        console.error("Invalid indices or video object.");
       }
     } else {
       console.error("Invalid dropzoneType.");
@@ -311,12 +372,13 @@ const OverviewPage = () => {
       // Extract data from the first course
       const course = courses[0]; // Assuming single course for simplicity
       const { title, description, learnings, requirements } = course;
+
       const formData = new FormData();
       formData.append("userId", userId);
       formData.append("courseTitle", title);
       formData.append("courseDescription", description);
-      formData.append("whatyouwilllearn", learnings);
-      formData.append("requirements", requirements);
+      formData.append("whatyouwilllearn", JSON.stringify(learnings)); // Serialize the array
+      formData.append("requirements", JSON.stringify(requirements)); // Serialize the array
 
       const response = await axios.post(
         "http://localhost:5000/api/course/create",
@@ -639,6 +701,22 @@ const OverviewPage = () => {
                         </button>
                       </div>
 
+                      <label className="block mb-2 font-semibold">
+                        Week Title
+                      </label>
+                      <input
+                        type="text"
+                        value={week.title || ""}
+                        onChange={(e) => {
+                          const updatedCourses = [...courses];
+                          updatedCourses[courseIndex].weeks[weekIndex].title =
+                            e.target.value;
+                          setCourses(updatedCourses);
+                        }}
+                        className="w-full p-2 mb-4 bg-gray-700 border border-gray-600 rounded"
+                        placeholder="Enter week title"
+                      />
+
                       {/* Videos in the Week */}
                       {week.videos?.map((video, videoIndex) => (
                         <div
@@ -770,7 +848,6 @@ const OverviewPage = () => {
                           </div>
                         </div>
                       ))}
-
                       {/* Add Video Button */}
                       <button
                         onClick={() => addVideo(courseIndex, weekIndex)}
@@ -788,6 +865,16 @@ const OverviewPage = () => {
                   >
                     Add Week
                   </button>
+                  {course.weeks?.map((week, weekIndex) => (
+                    <div key={weekIndex} className="mb-6">
+                      <h3 className="text-lg font-semibold mb-2">
+                        Week {weekIndex + 1} (Total Video Length:{" "}
+                        {Math.floor(week.totalLength / 60)} min{" "}
+                        {Math.floor(week.totalLength % 60)} sec)
+                      </h3>
+                      {/* ... */}
+                    </div>
+                  ))}
                 </div>
               ))}
 
@@ -844,7 +931,8 @@ const OverviewPage = () => {
                   {course.weeks?.map((week, weekIndex) => (
                     <div key={weekIndex} className="mb-6">
                       <h3 className="text-lg font-semibold mb-2">
-                        Quiz for Week {weekIndex + 1}
+                        Quiz for Week {weekIndex + 1} -{" "}
+                        {week.title || "Untitled Week"}
                       </h3>
 
                       {!week.quiz && (week.quiz = { questions: [] })}
@@ -972,12 +1060,102 @@ const OverviewPage = () => {
                   ))}
                 </div>
               ))}
-              <button
-                onClick={() => updateCourseFinal()}
-                className="mt-4 px-4 py-2 bg-green-600 text-white font-semibold rounded hover:bg-green-700"
-              >
-                Submit Course
-              </button>
+              <div className="flex justify-between mt-6">
+                <button
+                  onClick={() => setStep(3)}
+                  className="px-4 py-2 bg-gray-600 text-white font-semibold rounded hover:bg-gray-700"
+                >
+                  Previous Step
+                </button>
+                <button
+                  onClick={() => {
+                    setStep(5);
+                  }}
+                  className="px-4 py-2 bg-green-600 text-white font-semibold rounded hover:bg-green-700"
+                >
+                  Next
+                </button>
+              </div>
+            </div>
+          )}
+          {step === 5 && (
+            <div>
+              <h2 className="text-xl font-bold mb-4">
+                Finalize Course Details
+              </h2>
+              {courses.map((course, courseIndex) => (
+                <div key={courseIndex} className="mb-6">
+                  <label className="block mb-2 font-semibold">Keywords</label>
+                  <input
+                    type="text"
+                    value={course.keywords || ""}
+                    onChange={(e) => {
+                      updateCourseField(
+                        courseIndex,
+                        "keywords",
+                        e.target.value
+                      );
+                      setkeywords(e.target.value);
+                    }}
+                    className="w-full p-2 mb-4 bg-gray-700 border border-gray-600 rounded"
+                    placeholder="Enter keywords separated by commas"
+                  />
+
+                  <label className="block mb-2 font-semibold">
+                    Course Language
+                  </label>
+                  <input
+                    type="text"
+                    value={course.language || ""}
+                    onChange={(e) => {
+                      updateCourseField(
+                        courseIndex,
+                        "language",
+                        e.target.value
+                      );
+                      setcourselanguage(e.target.value);
+                    }}
+                    className="w-full p-2 mb-4 bg-gray-700 border border-gray-600 rounded"
+                    placeholder="e.g., English, Hindi"
+                  />
+
+                  <label className="block mb-2 font-semibold">
+                    Course Level
+                  </label>
+                  <select
+                    value={course.level || ""}
+                    onChange={(e) => {
+                      updateCourseField(courseIndex, "level", e.target.value);
+                      setLevel(e.target.value);
+                    }}
+                    className="w-full p-2 mb-4 bg-gray-700 border border-gray-600 rounded"
+                  >
+                    <option value="">Select Level</option>
+                    <option value="Beginner">Beginner</option>
+                    <option value="Intermediate">Intermediate</option>
+                    <option value="Advanced">Advanced</option>
+                  </select>
+                </div>
+              ))}
+
+              <div className="flex justify-between mt-6">
+                <button
+                  onClick={() => setStep(4)}
+                  className="px-4 py-2 bg-gray-600 text-white font-semibold rounded hover:bg-gray-700"
+                >
+                  Previous Step
+                </button>
+                <button
+                  onClick={() => {
+                    finalizeCourses();
+                    alert("Course finalized successfully!");
+                    // Add any final submission logic if necessary
+                  }}
+                  className="px-4 py-2 bg-green-600 text-white font-semibold rounded hover:bg-green-700"
+                >
+                  Finalize Course
+                </button>
+              </div>
             </div>
           )}
         </main>

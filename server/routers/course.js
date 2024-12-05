@@ -9,6 +9,7 @@ const {
   requestfile,
   seachcoursebyname,
   getCourseById,
+  finalize,
 } = require("../controllers/courseController");
 
 router.post("/create", create);
@@ -19,5 +20,6 @@ router.get("/media/:id", requestfile);
 
 router.get("/search", seachcoursebyname );
 router.get('/courses/:id', getCourseById);
+router.post('/finalize', finalize);
 
 module.exports = router;

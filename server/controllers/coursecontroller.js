@@ -12,21 +12,39 @@ exports.create = async (req, res) => {
     console.log("Parsed Fields:", req.fields);
 
     const {
-      userId, courseTitle, courseDescription, whatyouwilllearn,requirements} = req.fields;
+      userId,
+      courseTitle,
+      courseDescription,
+      whatyouwilllearn,
+      requirements,
+    } = req.fields;
+
+    // Parse `whatyouwilllearn` and `requirements` if they are stringified JSON
+    const learnPoints =
+      typeof whatyouwilllearn === "string" && whatyouwilllearn.startsWith("[")
+        ? JSON.parse(whatyouwilllearn)
+        : whatyouwilllearn.split(",").map((item) => item.trim());
+
+    const courseRequirements =
+      typeof requirements === "string" && requirements.startsWith("[")
+        ? JSON.parse(requirements)
+        : requirements.split(",").map((item) => item.trim());
 
     const newCourse = new Course({
       userId,
       title: courseTitle,
       description: courseDescription,
-      learnPoints: whatyouwilllearn,
-      requirements: requirements,
+      learnPoints,
+      requirements: courseRequirements,
     });
+
     console.log("New Course:", newCourse);
     await newCourse.save();
 
-    res
-      .status(201)
-      .json({ message: "Parsed successfully!", courseId: newCourse._id });
+    res.status(201).json({
+      message: "Course created successfully!",
+      courseId: newCourse._id,
+    });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Server error" });
@@ -35,7 +53,9 @@ exports.create = async (req, res) => {
 
 exports.uploadtrailer = async (req, res) => {
   try {
-    console.log("Received POST request for /api/course/uploadTrailerWithThumbnail");
+    console.log(
+      "Received POST request for /api/course/uploadTrailerWithThumbnail"
+    );
 
     const { courseId } = req.fields;
     const trailer = req.files.trailer;
@@ -55,15 +75,22 @@ exports.uploadtrailer = async (req, res) => {
     const trailerMimeType = trailer.mimetype || "video/mp4";
     const thumbnailMimeType = thumbnail.mimetype || "image/jpeg";
 
-    await mongoose.connect("mongodb://localhost:27017/ELearning", {
-    });
+    await mongoose.connect("mongodb://localhost:27017/ELearning", {});
 
     const conn = mongoose.connection;
     const bucket = new GridFSBucket(conn.db, { bucketName: "uploads" });
 
     try {
-      const trailerFileId = await uploadFile(trailer.path, bucket, trailerMimeType);
-      const thumbnailFileId = await uploadFile(thumbnail.path, bucket, thumbnailMimeType);
+      const trailerFileId = await uploadFile(
+        trailer.path,
+        bucket,
+        trailerMimeType
+      );
+      const thumbnailFileId = await uploadFile(
+        thumbnail.path,
+        bucket,
+        thumbnailMimeType
+      );
 
       course.trailerId = trailerFileId;
       course.thumbnailtrailer = thumbnailFileId;
@@ -84,21 +111,23 @@ exports.uploadtrailer = async (req, res) => {
   }
 };
 
-
 exports.uploadweeks = async (req, res) => {
   try {
-    const { courseId, weekNumber, title, description } = req.fields;
+    const { courseId, weekNumber, weekTitle, title, description, duration } =
+      req.fields;
     const videoFile = req.files.video;
     const thumbnailFile = req.files.thumbnail;
     const resourceFile = req.files.resource;
-
+    console.log(weekTitle);
     if (
       !courseId ||
       !weekNumber ||
+      !weekTitle ||
       !title ||
       !description ||
       !videoFile ||
-      !thumbnailFile
+      !thumbnailFile ||
+      !duration
     ) {
       return res.status(400).json({
         error:
@@ -124,13 +153,25 @@ exports.uploadweeks = async (req, res) => {
       await checkFileAccess(thumbnailFile.path);
 
       // Pass MIME type explicitly
-      const videoId = await uploadFile(videoFile.path, bucket, videoFile.mimetype || "video/mp4");
-      const thumbnailId = await uploadFile(thumbnailFile.path, bucket, thumbnailFile.mimetype || "image/jpeg");
+      const videoId = await uploadFile(
+        videoFile.path,
+        bucket,
+        videoFile.mimetype || "video/mp4"
+      );
+      const thumbnailId = await uploadFile(
+        thumbnailFile.path,
+        bucket,
+        thumbnailFile.mimetype || "image/jpeg"
+      );
       let resourceId = null;
 
       if (resourceFile) {
         await checkFileAccess(resourceFile.path);
-        resourceId = await uploadFile(resourceFile.path, bucket, resourceFile.mimetype || "application/pdf");
+        resourceId = await uploadFile(
+          resourceFile.path,
+          bucket,
+          resourceFile.mimetype || "application/pdf"
+        );
       }
 
       // Find the week by weekNumber or create a new one if it doesn't exist
@@ -138,7 +179,11 @@ exports.uploadweeks = async (req, res) => {
         (w) => w.weekNumber === parseInt(weekNumber)
       );
       if (weekIndex === -1) {
-        const newWeek = { weekNumber: parseInt(weekNumber), videos: [] };
+        const newWeek = {
+          weekNumber: parseInt(weekNumber),
+          weekTitle,
+          videos: [],
+        };
         course.weeks.push(newWeek);
         weekIndex = course.weeks.length - 1;
       }
@@ -150,6 +195,7 @@ exports.uploadweeks = async (req, res) => {
         thumbnail: thumbnailId,
         video: videoId,
         resource: resourceId,
+        duration: parseFloat(duration),
       });
 
       await course.markModified("weeks");
@@ -167,7 +213,6 @@ exports.uploadweeks = async (req, res) => {
     res.status(500).json({ error: "Server error" });
   }
 };
-
 
 exports.uploadquiz = async (req, res) => {
   try {
@@ -293,7 +338,8 @@ function checkFileAccess(filePath) {
 const uploadFile = async (filePath, bucket, providedMimeType = null) => {
   return new Promise((resolve, reject) => {
     const fileName = path.basename(filePath);
-    const contentType = providedMimeType || mime.lookup(filePath) || "application/octet-stream"; // Use provided MIME or fallback
+    const contentType =
+      providedMimeType || mime.lookup(filePath) || "application/octet-stream"; // Use provided MIME or fallback
 
     console.log(`Uploading: ${fileName}, Content-Type: ${contentType}`); // Log the MIME type
 
@@ -304,15 +350,16 @@ const uploadFile = async (filePath, bucket, providedMimeType = null) => {
 
     const readStream = fs.createReadStream(filePath);
 
-    readStream
-      .on("error", (err) => {
-        console.error(`Error with read stream for ${fileName}:`, err);
-        reject(err);
-      });
+    readStream.on("error", (err) => {
+      console.error(`Error with read stream for ${fileName}:`, err);
+      reject(err);
+    });
 
     uploadStream
       .on("finish", () => {
-        console.log(`Upload finished for: ${fileName}, Content-Type: ${contentType}`);
+        console.log(
+          `Upload finished for: ${fileName}, Content-Type: ${contentType}`
+        );
         resolve(uploadStream.id);
       })
       .on("error", (err) => {
@@ -344,45 +391,6 @@ exports.seachcoursebyname = async (req, res) => {
   }
 };
 
-
-
-function uploadResourceFile(filePath, bucket) {
-  return new Promise((resolve, reject) => {
-    const fileName = path.basename(filePath); // Extract the file name
-    const uploadStream = bucket.openUploadStream(fileName, {
-      chunkSizeBytes: 1024 * 1024, // 1MB chunks
-    });
-
-    const readStream = fs.createReadStream(filePath);
-    let bytesRead = 0;
-
-    readStream
-      .on("data", (chunk) => {
-        bytesRead += chunk.length;
-        console.log(
-          `Reading ${chunk.length} bytes from ${fileName}. Total: ${bytesRead}`
-        );
-      })
-      .on("error", (err) => {
-        console.error(`Error with read stream for ${fileName}:`, err);
-        reject(err);
-      });
-
-    uploadStream
-      .on("finish", () => {
-        console.log(`Upload finished for: ${fileName}`);
-        resolve(uploadStream.id); // Return the file ID
-      })
-      .on("error", (err) => {
-        console.error(`Error during upload for ${fileName}:`, err);
-        reject(err);
-      });
-
-    readStream.pipe(uploadStream);
-  });
-}
-
-
 exports.getCourseById = async (req, res) => {
   try {
     // Extract the course ID from the request parameters
@@ -398,6 +406,36 @@ exports.getCourseById = async (req, res) => {
 
     // Respond with the course details
     res.status(200).json(course);
+  } catch (err) {
+    console.error("Error fetching course details:", err);
+
+    // Handle invalid IDs or server errors
+    if (err.name === "CastError") {
+      return res.status(400).json({ error: "Invalid course ID" });
+    }
+
+    res.status(500).json({ error: "Server error" });
+  }
+};
+
+exports.finalize = async (req, res) => {
+  try {
+    const { couseId, keywords, courselanguage, level } = req.body;
+    console.log(couseId, keywords, courselanguage, level);
+
+    const course = await Course.findById(couseId);
+    if (!course) {
+      return res.status(404).json({ error: "Course not found" });
+    }
+
+    // Split keywords by commas and trim whitespace
+    course.keywords = keywords.split(",").map((keyword) => keyword.trim());
+    course.language = courselanguage;
+    course.level = level;
+    course.status = "Not Reviewed";
+
+    await course.save();
+    res.status(200).json({ message: "Course updated successfully", course });
   } catch (err) {
     console.error("Error fetching course details:", err);
 

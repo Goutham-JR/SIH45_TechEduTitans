@@ -22,6 +22,8 @@ const CourseCard = () => {
           const data = await response.json();
           setCourse(data);
           console.log(data);
+        } else {
+          console.warn("Query is undefined. Skipping fetch.");
         }
       } catch (error) {
         console.error("Error fetching course data:", error);
@@ -32,23 +34,29 @@ const CourseCard = () => {
   }, [query]);
 
   useEffect(() => {
-    const fetchData = async () => {
+    const fetchInstructorName = async () => {
       try {
-        const response = await axios.get(
-          `http://localhost:5000/api/protected/username/${course?.userId}`,
-          {
-            withCredentials: true,
-          }
-        );
-        setInstructorName(response.data.name || "Unknown");
+        if (course?.userId) {
+          const response = await axios.get(
+            `http://localhost:5000/api/protected/username/${course.userId}`,
+            {
+              withCredentials: true,
+            }
+          );
+          setInstructorName(response.data.name || "Unknown");
+        } else {
+          console.warn("User ID is undefined. Skipping fetch.");
+          setInstructorName("Unknown");
+        }
       } catch (error) {
         console.error("Error fetching instructor data:", error);
         setInstructorName("Unknown");
       }
     };
 
-    fetchData();
+    fetchInstructorName();
   }, [course?.userId]);
+
   return (
     <div className="bg-gray-900 text-white min-h-screen p-10">
       {/* Header Section */}
@@ -77,10 +85,18 @@ const CourseCard = () => {
           <div className="mt-10 bg-gray-800 p-6 rounded-lg">
             <h2 className="text-2xl font-semibold mb-4">What you'll learn</h2>
             <ul className="list-disc pl-6 text-gray-300">
-              {course?.learnPoints && Array.isArray(course.learnPoints) ? (
-                course.learnPoints.map((point, index) => (
-                  <li key={index}>{point}</li>
-                ))
+              {course?.learnPoints ? (
+                // Parse learnPoints if it's a stringified array
+                typeof course.learnPoints === "string" ? (
+                  JSON.parse(course.learnPoints).map((point, index) => (
+                    <li key={index}>{point}</li>
+                  ))
+                ) : (
+                  // Handle it directly if it's already an array
+                  course.learnPoints.map((point, index) => (
+                    <li key={index}>{point}</li>
+                  ))
+                )
               ) : (
                 <li>No points available</li>
               )}
@@ -95,7 +111,10 @@ const CourseCard = () => {
             <video
               className="w-full h-auto rounded-md"
               controls
-              src="https://www.example.com/video.mp4"
+              disablePictureInPicture
+              controlsList="nodownload"
+              src={`http://localhost:5000/api/course/media/${course?.trailerId}`}
+              poster={`http://localhost:5000/api/course/media/${course?.thumbnailtrailer}`}
             >
               Your browser does not support the video tag.
             </video>
@@ -151,31 +170,22 @@ const CourseCard = () => {
       <div className="mt-6 bg-gray-800 p-6 rounded-lg">
         <h2 className="text-2xl font-semibold mb-4">Requirements:</h2>
         <ul className="list-disc pl-6 text-gray-300">
-          <li>
-            You need NOT have java coding experience to start this course.
-          </li>
-          <li>Life Time instructor support to get all your queries solved.</li>
-          <li>All installation setup included.</li>
-          <li>
-            Course includes real-time projects with practical solutions for the
-            Selenium framework.
-          </li>
-          <li>
-            Theoretical material, code dumps, and interview guides are available
-            for download.
-          </li>
+          {course?.requirements ? (
+            // Parse learnPoints if it's a stringified array
+            typeof course.requirements === "string" ? (
+              JSON.parse(course.requirements).map((point, index) => (
+                <li key={index}>{point}</li>
+              ))
+            ) : (
+              // Handle it directly if it's already an array
+              course.requirements.map((point, index) => (
+                <li key={index}>{point}</li>
+              ))
+            )
+          ) : (
+            <li>No points available</li>
+          )}
         </ul>
-      </div>
-
-      {/* Description Section */}
-      <div className="mt-6 bg-gray-800 p-6 rounded-lg">
-        <h2 className="text-2xl font-semibold mb-4">Description:</h2>
-        <p className="text-gray-300">
-          Course last updated on Nov 7th with the latest Selenium TestNG
-          Framework Interview Questions. Have a passion for learning Selenium
-          but have no coding knowledge? This course fulfills your wish with easy
-          teaching and lifetime query support.
-        </p>
       </div>
     </div>
   );
