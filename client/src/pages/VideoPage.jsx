@@ -7,7 +7,7 @@ import "@react-pdf-viewer/core/lib/styles/index.css";
 import "@react-pdf-viewer/default-layout/lib/styles/index.css";
 import { Worker, Viewer, SpecialZoomLevel } from "@react-pdf-viewer/core";
 import { defaultLayoutPlugin } from "@react-pdf-viewer/default-layout";
-
+import { fullScreenPlugin } from "@react-pdf-viewer/full-screen";
 import {
   Play,
   Pause,
@@ -344,7 +344,42 @@ const ResourceService = {
 };
 
 const ResourcesComponent = (resourceId) => {
-  const defaultLayoutPluginInstance = defaultLayoutPlugin();
+  const viewerRef = useRef(null);
+
+    // Fullscreen plugin with custom target
+    const fullScreenPluginInstance = fullScreenPlugin({
+        getFullScreenTarget: (pagesContainer) => {
+            console.log("Entering fullscreen with container:", pagesContainer);
+            return pagesContainer.parentElement; // Customize the fullscreen target
+        },
+        enableShortcuts: true,
+    });
+
+    const defaultLayoutPluginInstance = defaultLayoutPlugin({
+        renderToolbar: (Toolbar) => (
+            <Toolbar>
+                {(slots) => {
+                    if (!slots) {
+                        console.error("Slots object is undefined.");
+                        return null;
+                    }
+
+                    console.log("EnterFullScreen slot:", slots.EnterFullScreen);
+
+                    return (
+                        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                            {/* Include desired buttons */}
+                            {slots.CurrentPageInput && <slots.CurrentPageInput />}
+                            {slots.GoToPreviousPage && <slots.GoToPreviousPage />}
+                            {slots.GoToNextPage && <slots.GoToNextPage />}
+                            {slots.ZoomOut && <slots.ZoomOut />}
+                            {slots.ZoomIn && <slots.ZoomIn />}
+                        </div>
+                    );
+                }}
+            </Toolbar>
+        )});
+
   const [resources, setResources] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -414,7 +449,7 @@ const ResourcesComponent = (resourceId) => {
       {/* Resource List */}
       <div className="space-y-4">
         <div className="flex justify-between items-center p-4 bg-gray-700 rounded-lg hover:bg-gray-600 transition">
-          <div style={{ height: "40vh", width: "100%" }}>
+          <div style={{ height: "60vh", width: "100%" }}>
             <Worker workerUrl="https://unpkg.com/pdfjs-dist@3.11.174/build/pdf.worker.min.js">
               <Viewer
                 fileUrl={resourceId.resourceId}
