@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import Header from "../components/Header";
 import Sidebar from "../components/SideBar";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import axios from "axios";
 import "@react-pdf-viewer/core/lib/styles/index.css";
 import "@react-pdf-viewer/default-layout/lib/styles/index.css";
@@ -91,13 +91,12 @@ const BibliographySection = () => {
   );
 };
 
-const FeedbackComponent = () => {
+const FeedbackComponent = (userId, courseId) => {
   const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
   const [rating, setRating] = useState(0);
   const [feedbackType, setFeedbackType] = useState([]);
   const [comment, setComment] = useState("");
-  const [timeStamp, setTimeStamp] = useState("");
-  const [isAnonymous, setIsAnonymous] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false); // Added for submission state
 
   const feedbackTypes = [
     "Content clarity",
@@ -105,8 +104,6 @@ const FeedbackComponent = () => {
     "Relevance to topic",
     "Pacing of the video",
   ];
-
-  const tags = ["Poor audio", "Blurry video", "Too fast", "Too slow"];
 
   const handleRating = (value) => {
     setRating(value);
@@ -120,20 +117,32 @@ const FeedbackComponent = () => {
     );
   };
 
-  const handleSubmitFeedback = () => {
-    console.log({
-      rating,
-      feedbackType,
-      comment,
-      timeStamp,
-      isAnonymous,
-    });
-    setIsFeedbackOpen(false);
-    setRating(0);
-    setFeedbackType([]);
-    setComment("");
-    setTimeStamp("");
-    setIsAnonymous(false);
+  const handleSubmitFeedback = async () => {
+    if (!rating && !feedbackType.length && !comment) {
+      alert("Please provide at least one form of feedback!");
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      await axios.post("http://localhost:5000/api/feedback/create", {
+        userId: userId.userId,
+        rating,
+        feedbackType,
+        comment,
+        courseId: userId.courseId,
+      });
+      alert("Thank you for your feedback!");
+    } catch (error) {
+      console.error("Error submitting feedback:", error);
+      alert("Failed to submit feedback. Please try again later.");
+    } finally {
+      setIsSubmitting(false);
+      setIsFeedbackOpen(false);
+      setRating(0);
+      setFeedbackType([]);
+      setComment("");
+    }
   };
 
   return (
@@ -192,6 +201,7 @@ const FeedbackComponent = () => {
                 color={rating >= star ? "#FFD700" : "#718096"} // yellow or gray-600
                 onClick={() => handleRating(star)}
                 style={{ cursor: "pointer", marginRight: "5px" }}
+                aria-label={`Rate ${star} star`}
               />
             ))}
             <span style={{ marginLeft: "10px" }}>{rating} / 5</span>
@@ -232,38 +242,6 @@ const FeedbackComponent = () => {
             </div>
           </div>
 
-          {/* Tagging System */}
-          <div>
-            <h4>Tags for Specific Issues:</h4>
-            <div
-              style={{
-                display: "flex",
-                flexWrap: "wrap",
-                gap: "10px",
-                marginBottom: "15px",
-              }}
-            >
-              {tags.map((tag) => (
-                <motion.span
-                  key={tag}
-                  whileTap={{ scale: 0.95 }}
-                  style={{
-                    display: "inline-block",
-                    padding: "5px 10px",
-                    border: "1px solid #718096", // gray-600
-                    borderRadius: "5px",
-                    backgroundColor: "#2D3748", // gray-800
-                    color: "#A0AEC0", // gray-400 text
-                    cursor: "pointer",
-                  }}
-                >
-                  <Tag size={14} style={{ marginRight: "5px" }} />
-                  {tag}
-                </motion.span>
-              ))}
-            </div>
-          </div>
-
           {/* Comment Section */}
           <div>
             <h4>Additional Comments:</h4>
@@ -284,57 +262,21 @@ const FeedbackComponent = () => {
             ></textarea>
           </div>
 
-          {/* Timestamp Section */}
-          <div>
-            <h4>Timestamp:</h4>
-            <input
-              type="text"
-              value={timeStamp}
-              onChange={(e) => setTimeStamp(e.target.value)}
-              placeholder="E.g., 2:15"
-              style={{
-                padding: "5px 10px",
-                borderRadius: "5px",
-                border: "1px solid #718096", // gray-600 border
-                backgroundColor: "#2D3748", // gray-800
-                color: "#FFFFFF", // white text
-                width: "100%",
-                marginBottom: "15px",
-              }}
-            />
-          </div>
-
-          {/* Anonymous Feedback */}
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              marginBottom: "15px",
-            }}
-          >
-            <input
-              type="checkbox"
-              checked={isAnonymous}
-              onChange={() => setIsAnonymous(!isAnonymous)}
-              style={{ marginRight: "10px" }}
-            />
-            <label>Submit feedback anonymously</label>
-          </div>
-
           {/* Submit Button */}
           <motion.button
             whileHover={{ scale: 1.05 }}
             onClick={handleSubmitFeedback}
+            disabled={isSubmitting}
             style={{
               padding: "10px 20px",
               borderRadius: "8px",
-              backgroundColor: "#4CAF50",
+              backgroundColor: isSubmitting ? "#999" : "#4CAF50",
               color: "#fff",
               border: "none",
-              cursor: "pointer",
+              cursor: isSubmitting ? "not-allowed" : "pointer",
             }}
           >
-            Submit Feedback
+            {isSubmitting ? "Submitting..." : "Submit Feedback"}
           </motion.button>
         </motion.div>
       )}
@@ -401,7 +343,7 @@ const ResourceService = {
   },
 };
 
-const ResourcesComponent = () => {
+const ResourcesComponent = (resourceId) => {
   const defaultLayoutPluginInstance = defaultLayoutPlugin();
   const [resources, setResources] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -475,7 +417,7 @@ const ResourcesComponent = () => {
           <div style={{ height: "40vh", width: "100%" }}>
             <Worker workerUrl="https://unpkg.com/pdfjs-dist@3.11.174/build/pdf.worker.min.js">
               <Viewer
-                fileUrl="http://localhost:5000/api/course/media/674ec7858a1eb4586fbf98a5"
+                fileUrl={resourceId.resourceId}
                 plugins={[defaultLayoutPluginInstance]}
                 defaultScale={SpecialZoomLevel.PageWidth} // Fit the width of the container
               />
@@ -487,7 +429,7 @@ const ResourcesComponent = () => {
   );
 };
 
-const CourseContentComponent = ({ course, onVideoSelect }) => {
+const CourseContentComponent = ({ course, onVideoSelect, progress }) => {
   const [openWeeks, setOpenWeeks] = useState([0]); // First week open by default
 
   const toggleWeek = (weekIndex) => {
@@ -567,7 +509,9 @@ const CourseContentComponent = ({ course, onVideoSelect }) => {
                 >
                   {/* Left Section: Icon and Title */}
                   <div className="flex items-center space-x-4">
-                    {renderVideoIcon("video")}
+                    {progress?.completedVideos?.includes(video.video)
+                      ? renderVideoIcon("completed")
+                      : renderVideoIcon("video")}
                     <span className="text-white text-base font-semibold">
                       {video.title}
                     </span>
@@ -587,12 +531,14 @@ const CourseContentComponent = ({ course, onVideoSelect }) => {
       <div className="mt-6 bg-gray-800 p-4 rounded-lg">
         <div className="flex justify-between items-center mb-3">
           <h3 className="font-semibold text-white">Course Progress</h3>
-          <span className="text-blue-400">35% Complete</span>
+          <span className="text-blue-400">
+            {progress?.progressPercentage}% Complete
+          </span>
         </div>
         <div className="w-full bg-gray-500 rounded-full h-2.5">
           <div
             className="bg-blue-600 h-2.5 rounded-full"
-            style={{ width: "35%" }}
+            style={{ width: `${progress?.progressPercentage || 0}%` }}
           ></div>
         </div>
       </div>
@@ -608,6 +554,7 @@ const VideoDescriptionComponent = ({
   views,
   likes,
   description,
+  progress,
 }) => {
   const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
   const [isLiked, setIsLiked] = useState(null);
@@ -650,45 +597,6 @@ const VideoDescriptionComponent = ({
             {formatViewCount(views)} • {formatDate(uploadDate)}
           </p>
         </div>
-
-        {/* Action Buttons */}
-        <div className="flex items-center space-x-4">
-          {/* Like Button */}
-          <button
-            className={`flex items-center space-x-1 ${
-              isLiked === true ? "text-blue-600" : "text-gray-100"
-            }`}
-            onClick={() => setIsLiked(isLiked === true ? null : true)}
-          >
-            <ThumbsUp className="w-5 h-5" />
-            <span>{likes}</span>
-          </button>
-
-          {/* Dislike Button */}
-          <button
-            className={`flex items-center space-x-1 ${
-              isLiked === false ? "text-red-600" : "text-gray-100"
-            }`}
-            onClick={() => setIsLiked(isLiked === false ? null : false)}
-          >
-            <ThumbsDown className="w-5 h-5" />
-          </button>
-
-          {/* Share Button */}
-          <button className="text-gray-100 hover:text-blue-600">
-            <Share2 className="w-5 h-5" />
-          </button>
-
-          {/* Bookmark Button */}
-          <button className="text-gray-100 hover:text-green-600">
-            <BookmarkPlus className="w-5 h-5" />
-          </button>
-
-          {/* Report Button */}
-          <button className="text-gray-100 hover:text-red-600">
-            <Flag className="w-5 h-5" />
-          </button>
-        </div>
       </div>
 
       {/* Instructor Information */}
@@ -726,7 +634,7 @@ const VideoDescriptionComponent = ({
   );
 };
 
-const VideoPlayer = ({ thumbnail, video }) => {
+const VideoPlayer = ({ thumbnail, video, userId, courseId, setProgress }) => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [volume, setVolume] = useState(1);
   const [isMuted, setIsMuted] = useState(false);
@@ -735,6 +643,43 @@ const VideoPlayer = ({ thumbnail, video }) => {
   const [showControls, setShowControls] = useState(true); // Controls visibility
   const videoRef = useRef(null);
   const timeoutRef = useRef(null);
+  const [watchedVideos, setWatchedVideos] = useState([]);
+
+  const handleVideoEnd = async (videoUrl) => {
+    const videoId = videoUrl.split("/").pop(); // Extract the video ID
+
+    // Update watchedVideos state to reflect the watched video
+    setWatchedVideos((prev) => [...new Set([...prev, videoId])]);
+
+    console.log(userId, courseId, videoId);
+
+    try {
+      // Send completion data to the server
+      await axios.post(
+        "http://localhost:5000/api/student/progress",
+        {
+          userId, // Assuming userId is already defined
+          courseId, // Assuming courseId is already defined
+          videoId,
+        },
+        { withCredentials: true }
+      );
+
+      // Refetch progress after successful API call
+      const progressResponse = await axios.get(
+        "http://localhost:5000/api/student/getprogress",
+        {
+          params: { userId: userId, courseId: courseId },
+          withCredentials: true,
+        }
+      );
+
+      setProgress(progressResponse.data); // Update the progress state
+      console.log("Video completion recorded and progress updated");
+    } catch (error) {
+      console.error("Error recording video completion", error);
+    }
+  };
 
   const togglePlayPause = () => {
     if (isPlaying) {
@@ -802,6 +747,7 @@ const VideoPlayer = ({ thumbnail, video }) => {
         poster={thumbnail}
         onClick={togglePlayPause}
         src={video}
+        onEnded={() => handleVideoEnd(video)}
       ></video>
 
       {showControls && (
@@ -889,10 +835,32 @@ const VideoPlayer = ({ thumbnail, video }) => {
 
 const OverviewPage = () => {
   const location = useLocation();
+  const navigate = useNavigate();
   const [query, setQuery] = useState(location.state?.query || "");
   const [course, setCourse] = useState(null);
   const [instructorName, setInstructorName] = useState("");
-  const [isbibilography, setisbibilography] = useState(false);
+  const [isbibilography, setisbibilography] = useState(true);
+  const [userId, setUserId] = useState();
+  const [progress, setProgress] = useState();
+
+  useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        const response = await axios.get(
+          "http://localhost:5000/api/protected/check-auth",
+          {
+            withCredentials: true, // Send cookies with the request
+          }
+        );
+        setUserId(response.data.user); // Set user data
+      } catch (err) {
+        setUser(null);
+      }
+    };
+
+    fetchUser();
+  }, [navigate]);
+
   const [selectedVideo, setSelectedVideo] = useState({
     title: "Loading...",
     instructor: "Loading...",
@@ -1005,6 +973,29 @@ const OverviewPage = () => {
 
     fetchData();
   }, [query]);
+
+  useEffect(() => {
+    const fetchProgress = async () => {
+      try {
+        if (userId?.id && course?._id) {
+          const response = await axios.get(
+            "http://localhost:5000/api/student/getprogress",
+            {
+              params: { userId: userId.id, courseId: course._id }, // Pass as query parameters
+              withCredentials: true, // Send cookies with the request
+            }
+          );
+          setProgress(response.data);
+          console.log("Progress:", response.data);
+        }
+      } catch (err) {
+        console.error("Error fetching progress:", err);
+      }
+    };
+
+    fetchProgress();
+  }, [navigate, userId, course]);
+
   return (
     <div className="flex h-screen bg-gray-900 text-gray-100 overflow-hidden">
       {/* Background Layers */}
@@ -1032,6 +1023,10 @@ const OverviewPage = () => {
                       className="w-full h-full object-cover"
                       thumbnail={selectedVideo.thumbnail}
                       video={selectedVideo.video}
+                      selectedVideo={selectedVideo}
+                      userId={userId.id}
+                      courseId={query}
+                      setProgress={setProgress}
                     />
                   ) : (
                     <div className="flex justify-center items-center h-80 bg-gray-800">
@@ -1050,9 +1045,10 @@ const OverviewPage = () => {
                     video={selectedVideo.video}
                     resource={selectedVideo.resource}
                     description={selectedVideo.description}
+                    progress={progress}
                   />
                   <div className="mt-4">
-                    <ResourcesComponent />
+                    <ResourcesComponent resourceId={selectedVideo.resource} />
                   </div>
                 </div>
               </div>
@@ -1063,10 +1059,11 @@ const OverviewPage = () => {
                   <CourseContentComponent
                     course={course}
                     onVideoSelect={(video) => setSelectedVideo(video)}
+                    progress={progress}
                   />
                   <div className="mt-4" />
                   {isbibilography && <BibliographySection />}
-                  <FeedbackComponent />
+                  <FeedbackComponent userId={userId?.id} courseId={query} />
                 </div>
               </div>
             </div>

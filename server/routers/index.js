@@ -13,7 +13,8 @@ const updatePersonalInfoRouter = require('../routers/updatePersonalInfo');
 const skillRouter = require("../routers/skillRouter");
 const addressRouter = require("../routers/addressRouter");
 const deleteRouter = require('../routers/deleteRouter');
-
+const studentRouter = require('../routers/studentRouter');
+const feedbackRouter = require('../routers/feedbackRouter');
 const { connectDB } = require('../config/db');
 
 // Initialize app and connect to DB
@@ -67,6 +68,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/protected', protectedRoutes);
 app.use('/api/course', courseRoutes);
 app.use('/api', courseRouter);
+app.use('/api/student', studentRouter);
 app.use('/api/quiz', quizRoutes);
 app.use('/api/completed-courses', completedCourseRouter);
 app.use('/api/users', passupdate);
@@ -74,6 +76,7 @@ app.use('/api/info', updatePersonalInfoRouter);
 app.use("/api/skills", skillRouter);
 app.use("/api/address", addressRouter);
 app.use('/api/account', deleteRouter);
+app.use('/api/feedback', feedbackRouter);
 
 
 
