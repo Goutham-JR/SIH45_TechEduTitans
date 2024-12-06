@@ -1,13 +1,40 @@
 import { React, useState, useEffect } from "react";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate  } from "react-router-dom";
 import axios from "axios";
 import moment from "moment";
 
 const CourseCard = () => {
   const location = useLocation();
+  const navigate = useNavigate();
   const [query, setQuery] = useState(location.state?.query || "");
   const [course, setCourse] = useState(null);
   const [instructorName, setInstructorName] = useState("");
+  const [courseDuration, setcourseDuration] = useState(null);
+  const [courseresource, setcourseresource] = useState(null);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        if (query) {
+          const response = await fetch(
+            `http://localhost:5000/api/course/getcourseduration/${query}`
+          );
+          if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+          }
+          const data = await response.json();
+          setcourseDuration(data);
+          console.log(data);
+        } else {
+          console.warn("Query is undefined. Skipping fetch.");
+        }
+      } catch (error) {
+        console.error("Error fetching course data:", error);
+      }
+    };
+
+    fetchData();
+  }, [query]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -21,6 +48,30 @@ const CourseCard = () => {
           }
           const data = await response.json();
           setCourse(data);
+          console.log(data);
+        } else {
+          console.warn("Query is undefined. Skipping fetch.");
+        }
+      } catch (error) {
+        console.error("Error fetching course data:", error);
+      }
+    };
+
+    fetchData();
+  }, [query]);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        if (query) {
+          const response = await fetch(
+            `http://localhost:5000/api/course/getCourseresource/${query}`
+          );
+          if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+          }
+          const data = await response.json();
+          setcourseresource(data);
           console.log(data);
         } else {
           console.warn("Query is undefined. Skipping fetch.");
@@ -102,6 +153,30 @@ const CourseCard = () => {
               )}
             </ul>
           </div>
+
+          {/* Course Includes Section */}
+          <div className="mt-6 bg-gray-800 p-6 rounded-lg">
+            <h2 className="text-2xl font-semibold mb-4">
+              This course includes:
+            </h2>
+            <div className="grid grid-cols-2 gap-4 text-gray-300">
+              <p>
+                📹{" "}
+                {(() => {
+                  const totalSeconds = courseDuration?.totalduration || 0; // Default to 0 if undefined
+                  const hours = Math.floor(totalSeconds / 3600); // Calculate hours
+                  const minutes = Math.floor((totalSeconds % 3600) / 60); // Calculate remaining minutes
+                  const seconds = totalSeconds % 60; // Calculate remaining seconds
+                  return `${hours} hrs ${minutes} mins ${seconds} sec`; // Format the result
+                })()}{" "}
+                on-demand video
+              </p>
+
+              <p>📂 {courseresource?.totalResources} downloadable resources</p>
+              <p>🏆 Certificate of completion</p>
+              <p>📜 63 articles</p>
+            </div>
+          </div>
         </div>
 
         {/* Right Content */}
@@ -125,20 +200,28 @@ const CourseCard = () => {
             <h3 className="text-3xl font-bold text-green-400">Free</h3>
             <div className="space-y-4 text-gray-300 mt-4">
               <p>
-                <span className="font-bold">⏱ Course Duration:</span> 32 h 17 m
-                5 s
+                <span className="font-bold">⏱ Course Duration:</span>{" "}
+                {(() => {
+                  const totalSeconds = courseDuration?.totalduration || 0;
+                  const hours = Math.floor(totalSeconds / 3600);
+                  const minutes = Math.floor((totalSeconds % 3600) / 60);
+                  const seconds = totalSeconds % 60;
+                  return `${hours} hrs ${minutes} mins ${seconds} sec`;
+                })()}{" "}
               </p>
               <p>
-                <span className="font-bold">📊 Course Level:</span> Intermediate
+                <span className="font-bold">📊 Course Level:</span>{" "}
+                {course?.level}
               </p>
               <p>
                 <span className="font-bold">👥 Student Enrolled:</span> 441
               </p>
               <p>
-                <span className="font-bold">🌍 Language:</span> English
+                <span className="font-bold">🌍 Language:</span>{" "}
+                {course?.language}
               </p>
             </div>
-            <button className="bg-purple-600 w-full py-3 mt-6 rounded-md text-white font-semibold">
+            <button className="bg-purple-600 w-full py-3 mt-6 rounded-md text-white font-semibold" onClick={() => navigate("/coursevideo", { state: { query: course._id} })}>
               Enroll the Course →
             </button>
             <div className="flex justify-between mt-4 space-x-2">
@@ -153,18 +236,6 @@ const CourseCard = () => {
         </div>
       </div>
 
-      {/* Course Includes Section */}
-      <div className="mt-6 bg-gray-800 p-6 rounded-lg">
-        <h2 className="text-2xl font-semibold mb-4">This course includes:</h2>
-        <div className="grid grid-cols-2 gap-4 text-gray-300">
-          <p>📹 55 hours on-demand video</p>
-          <p>📂 138 downloadable resources</p>
-          <p>💻 Access on mobile and TV</p>
-          <p>🏆 Certificate of completion</p>
-          <p>📜 63 articles</p>
-          <p>💡 2 coding exercises</p>
-        </div>
-      </div>
 
       {/* Requirements Section */}
       <div className="mt-6 bg-gray-800 p-6 rounded-lg">

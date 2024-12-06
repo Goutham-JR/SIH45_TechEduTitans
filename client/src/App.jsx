@@ -29,6 +29,7 @@ import UploadCourse from './pages/CourseUpload';
 import Setting from './components/setting';
 import SearchList from './pages/SearchList';
 import CoursePage from './pages/CoursePage'
+import CourseVideoPage from './pages/VideoPage';
 
 function App() {
   axios.defaults.withCredentials = true;
@@ -42,7 +43,6 @@ function App() {
         <Route path="/profile" element={<Profile />} />
         <Route path="/Admindashboard" element={<AdminDashboard />} />
         <Route path="/coursepload" element={<CourseUpload />} />
-        <Route path="/coursevideo" element={<Course />} />
         <Route path="/payment" element={<PaymentsPage />} />
         <Route path="/assignment" element={<AssignmentsPage />} />
         <Route path="/result" element={<ResultsAndProgressPage />} />
@@ -65,6 +65,7 @@ function App() {
         <Route path="/Setting" element={< Setting/>} />
         <Route path="/SearchList" element={< SearchList/>} />
         <Route path="/CoursePage" element={< CoursePage/>} />
+        <Route path="/CourseVideo" element={< CourseVideoPage/>} />
       </Routes>
     </BrowserRouter>
   );

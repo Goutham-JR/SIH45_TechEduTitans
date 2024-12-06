@@ -29,6 +29,8 @@ npm install react-slick slick-carousel
 npm install slick-carousel/slick/slick.css slick-carousel/slick/slick-theme.css
 npm install postcss autoprefixer
 npm install react-icons rechart react-big-calendar
+npm install @react-pdf-viewer/core @react-pdf-viewer/default-layout
+
 
 
 

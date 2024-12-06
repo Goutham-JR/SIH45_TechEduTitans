@@ -6,6 +6,7 @@ const fs = require("fs");
 const path = require("path");
 const mongoose = require("mongoose");
 const mime = require("mime-types");
+const redisClient = require("redis").createClient();
 
 exports.create = async (req, res) => {
   try {
@@ -266,61 +267,92 @@ const bucketName = "uploads"; // Name of the GridFS bucket
 
 const client = new MongoClient(uri);
 
+
 exports.requestfile = async (req, res) => {
-  try {
-    // Ensure MongoDB connection is established
-    if (!client.isConnected) {
-      await client.connect();
+    try {
+        if (!client.isConnected) {
+            await client.connect();
+        }
+
+        const database = client.db(databaseName);
+        const bucket = new GridFSBucket(database, { bucketName });
+
+        const fileId = req.params.id || req.fields.fileId;
+        if (!ObjectId.isValid(fileId)) {
+            return res.status(400).send("Invalid ObjectId");
+        }
+
+        const file = await database.collection(`${bucketName}.files`).findOne(
+            { _id: new ObjectId(fileId) },
+            { projection: { length: 1, contentType: 1, filename: 1 } }
+        );
+
+        if (!file) {
+            return res.status(404).send("File not found");
+        }
+
+        const contentType = file.contentType || "application/octet-stream";
+        res.set("Content-Type", contentType);
+        res.set("Cache-Control", "public, max-age=31536000"); // Enable caching
+
+        const range = req.headers.range;
+
+        if (range && (contentType.startsWith("video/") || contentType.startsWith("audio/"))) {
+            const ranges = range.replace(/bytes=/, "").split("-");
+            const start = parseInt(ranges[0], 10);
+            const end = ranges[1] ? parseInt(ranges[1], 10) : Math.min(start + 1024 * 512 - 1, file.length - 1);
+
+            if (start >= file.length || end >= file.length) {
+                res.status(416).set("Content-Range", `bytes */${file.length}`).end();
+                return;
+            }
+
+            const chunkSize = end - start + 1;
+            res.status(206).set({
+                "Content-Range": `bytes ${start}-${end}/${file.length}`,
+                "Accept-Ranges": "bytes",
+                "Content-Length": chunkSize,
+            });
+
+            const downloadStream = bucket.openDownloadStream(file._id, { start, end: end + 1 });
+            downloadStream.pipe(res);
+
+            downloadStream.on("error", (error) => {
+                console.error("Stream error:", error);
+                res.status(500).send("An error occurred while streaming the file.");
+            });
+
+            downloadStream.on("end", () => {
+                console.log(`Finished streaming range ${start}-${end} of file with ObjectId: ${fileId}`);
+            });
+        } else {
+            if (contentType === "application/pdf" || contentType.startsWith("image/")) {
+                res.set("Content-Disposition", `inline; filename="${file.filename}"`);
+            } else {
+                res.set("Content-Disposition", `attachment; filename="${file.filename}"`);
+            }
+
+            res.set("Content-Length", file.length);
+
+            const downloadStream = bucket.openDownloadStream(file._id);
+            downloadStream.pipe(res);
+
+            downloadStream.on("error", (error) => {
+                console.error("Stream error:", error);
+                res.status(500).send("An error occurred while streaming the file.");
+            });
+
+            downloadStream.on("end", () => {
+                console.log(`Finished streaming file with ObjectId: ${fileId}`);
+            });
+        }
+    } catch (error) {
+        console.error("Error handling file request:", error);
+        res.status(500).send("An error occurred.");
     }
-
-    const database = client.db(databaseName);
-    const bucket = new GridFSBucket(database, { bucketName });
-
-    // Extract fileId from request params or body
-    const fileId = req.params.id || req.fields.fileId; // Use req.params.id for routes or req.fields.fileId for POST requests
-    console.log("Extracted fileId:", fileId);
-
-    // Validate the ObjectId
-    if (!ObjectId.isValid(fileId)) {
-      return res.status(400).send("Invalid ObjectId");
-    }
-
-    // Find the file in the GridFS bucket
-    const file = await database
-      .collection(`${bucketName}.files`)
-      .findOne({ _id: new ObjectId(fileId) });
-
-    if (!file) {
-      return res.status(404).send("File not found");
-    }
-
-    // Set content headers
-    const contentType = file.contentType || "application/octet-stream";
-    res.set("Content-Type", contentType);
-
-    // Stream the file based on its content type
-    const downloadStream = bucket.openDownloadStream(file._id);
-
-    // Set additional headers if needed
-    if (contentType === "application/pdf" || contentType.startsWith("image/")) {
-      res.set("Content-Disposition", `inline; filename="${file.filename}"`);
-    }
-
-    downloadStream.pipe(res);
-
-    downloadStream.on("error", (error) => {
-      console.error("Stream error:", error);
-      res.status(500).send("An error occurred while streaming the file.");
-    });
-
-    downloadStream.on("end", () => {
-      console.log(`Finished streaming file with ObjectId: ${fileId}`);
-    });
-  } catch (error) {
-    console.error("Error handling file request:", error);
-    res.status(500).send("An error occurred.");
-  }
 };
+
+
 
 function checkFileAccess(filePath) {
   return new Promise((resolve, reject) => {
@@ -421,7 +453,7 @@ exports.getCourseById = async (req, res) => {
 exports.finalize = async (req, res) => {
   try {
     const { couseId, keywords, courselanguage, level } = req.body;
-    console.log(couseId, keywords, courselanguage, level);
+    console.log(req.body);
 
     const course = await Course.findById(couseId);
     if (!course) {
@@ -436,6 +468,87 @@ exports.finalize = async (req, res) => {
 
     await course.save();
     res.status(200).json({ message: "Course updated successfully", course });
+  } catch (err) {
+    console.error("Error fetching course details:", err);
+
+    // Handle invalid IDs or server errors
+    if (err.name === "CastError") {
+      return res.status(400).json({ error: "Invalid course ID" });
+    }
+
+    res.status(500).json({ error: "Server error" });
+  }
+};
+
+exports.getCourseDuration = async (req, res) => {
+  try {
+    const { id } = req.params;
+    // Fetch the course by its ID
+    const course = await Course.findById(id);
+    if (!course) {
+      return res.status(404).json({ error: "Course not found" });
+    }
+
+    // Calculate the total duration of all videos across all weeks
+    let totalDuration = 0;
+    if (course.weeks && Array.isArray(course.weeks)) {
+      course.weeks.forEach((week) => {
+        if (week.videos && Array.isArray(week.videos)) {
+          week.videos.forEach((video) => {
+            const duration = parseInt(video.duration, 10); // Ensure the duration is an integer
+            if (!isNaN(duration)) {
+              totalDuration += duration;
+            }
+          });
+        }
+      });
+    }
+
+    // Respond with the total duration
+    res.status(200).json({
+      totalduration: totalDuration, // Total duration of all videos in minutes
+    });
+  } catch (err) {
+    console.error("Error fetching course details:", err);
+
+    // Handle invalid IDs or server errors
+    if (err.name === "CastError") {
+      return res.status(400).json({ error: "Invalid course ID" });
+    }
+
+    res.status(500).json({ error: "Server error" });
+  }
+};
+
+exports.getCourseresource = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Fetch the course by its ID
+    const course = await Course.findById(id);
+    if (!course) {
+      return res.status(404).json({ error: "Course not found" });
+    }
+
+    // Calculate the total number of resources across all weeks and videos
+    let totalResources = 0; // To count the total resources
+    if (course.weeks && Array.isArray(course.weeks)) {
+      course.weeks.forEach((week) => {
+        if (week.videos && Array.isArray(week.videos)) {
+          week.videos.forEach((video) => {
+            // Count resources if present
+            if (video.resource) {
+              totalResources += 1;
+            }
+          });
+        }
+      });
+    }
+
+    // Respond with the total number of resources
+    res.status(200).json({
+      totalResources, // Total number of resources
+    });
   } catch (err) {
     console.error("Error fetching course details:", err);
 

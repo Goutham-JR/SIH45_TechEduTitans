@@ -10,6 +10,8 @@ const {
   seachcoursebyname,
   getCourseById,
   finalize,
+  getCourseDuration,
+  getCourseresource,
 } = require("../controllers/courseController");
 
 router.post("/create", create);
@@ -21,5 +23,7 @@ router.get("/media/:id", requestfile);
 router.get("/search", seachcoursebyname );
 router.get('/courses/:id', getCourseById);
 router.post('/finalize', finalize);
+router.get('/getcourseduration/:id', getCourseDuration);
+router.get('/getcourseresource/:id', getCourseresource);
 
 module.exports = router;

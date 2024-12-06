@@ -45,15 +45,15 @@ const courseSchema = new mongoose.Schema(
       type: [weekSchema],
       required: false,
     },
-    finalQuiz: { type: quizSchema, required: false }, // Final quiz for the course
+    finalQuiz: { type: quizSchema, required: false }, 
     trailerId: { type: String, required: false },
-    thumbnailtrailer: { type: String, required: false }, // Path to trailer file
+    thumbnailtrailer: { type: String, required: false }, 
     keywords: { type: [String], required: false },
     language: { type: [String], required: false },
     level: { type: String, required: false },
     status: { type: String, required: false },
   },
-  { timestamps: true } // Automatically add createdAt and updatedAt timestamps
+  { timestamps: true } 
 );
 
 // Create Mongoose Model
