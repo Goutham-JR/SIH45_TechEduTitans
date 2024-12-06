@@ -30,6 +30,9 @@ import Setting from './components/setting';
 import SearchList from './pages/SearchList';
 import CoursePage from './pages/CoursePage'
 import CourseVideoPage from './pages/VideoPage';
+import InstructorProfile from './components/InstructorProfile';
+import Quizmain from './pages/Quiz';
+
 
 function App() {
   axios.defaults.withCredentials = true;
@@ -66,6 +69,8 @@ function App() {
         <Route path="/SearchList" element={< SearchList/>} />
         <Route path="/CoursePage" element={< CoursePage/>} />
         <Route path="/CourseVideo" element={< CourseVideoPage/>} />
+        <Route path="/InstructorProfile" element={< InstructorProfile/>} />
+        <Route path="/quizmain" element={< Quizmain/>} />
       </Routes>
     </BrowserRouter>
   );
