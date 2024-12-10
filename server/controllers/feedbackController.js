@@ -32,3 +32,30 @@ exports.createFeedback = async (req, res) => {
     res.status(500).json({ message: "Internal server error.", error });
   }
 };
+
+
+exports.hasUserGivenFeedback = async (req, res) => {
+    try {
+      const { courseId, userId } = req.params;
+  
+      // Validate input
+      if (!courseId) {
+        return res.status(400).json({ message: "Course ID is required." });
+      }
+  
+      if (!userId) {
+        return res.status(400).json({ message: "User ID is required." });
+      }
+  
+      // Check if feedback exists
+      const feedbackExists = await Feedback.exists({ courseId, userId });
+  
+      // Return true or false
+      return res.status(200).json({ hasGivenFeedback: Boolean(feedbackExists) });
+    } catch (error) {
+      console.error("Error checking feedback:", error);
+      res.status(500).json({ message: "Internal server error.", error });
+    }
+  };
+  
+  

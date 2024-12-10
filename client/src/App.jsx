@@ -26,7 +26,7 @@ import StudentQuizzes from './pages/StudentQuizzes'
 import StudentLeaderBoard from './pages/StudentLeaderBoard';
 import StudentCalender from './pages/StudentCalender';
 import UploadCourse from './pages/CourseUpload';
-import Setting from './components/setting';
+import Setting from './pages/SettingPage';
 import SearchList from './pages/SearchList';
 import CoursePage from './pages/CoursePage'
 import CourseVideoPage from './pages/VideoPage';

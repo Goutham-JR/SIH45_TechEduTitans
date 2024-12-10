@@ -346,39 +346,29 @@ const ResourceService = {
 const ResourcesComponent = (resourceId) => {
   const viewerRef = useRef(null);
 
-    // Fullscreen plugin with custom target
-    const fullScreenPluginInstance = fullScreenPlugin({
-        getFullScreenTarget: (pagesContainer) => {
-            console.log("Entering fullscreen with container:", pagesContainer);
-            return pagesContainer.parentElement; // Customize the fullscreen target
-        },
-        enableShortcuts: true,
-    });
+  // Fullscreen plugin with custom target
 
-    const defaultLayoutPluginInstance = defaultLayoutPlugin({
-        renderToolbar: (Toolbar) => (
-            <Toolbar>
-                {(slots) => {
-                    if (!slots) {
-                        console.error("Slots object is undefined.");
-                        return null;
-                    }
-
-                    console.log("EnterFullScreen slot:", slots.EnterFullScreen);
-
-                    return (
-                        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                            {/* Include desired buttons */}
-                            {slots.CurrentPageInput && <slots.CurrentPageInput />}
-                            {slots.GoToPreviousPage && <slots.GoToPreviousPage />}
-                            {slots.GoToNextPage && <slots.GoToNextPage />}
-                            {slots.ZoomOut && <slots.ZoomOut />}
-                            {slots.ZoomIn && <slots.ZoomIn />}
-                        </div>
-                    );
-                }}
-            </Toolbar>
-        )});
+  const defaultLayoutPluginInstance = defaultLayoutPlugin({
+    renderToolbar: (Toolbar) => (
+      <Toolbar>
+        {(slots) => {
+          if (!slots) {
+            return null;
+          }
+          return (
+            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+              {/* Include desired buttons */}
+              {slots.CurrentPageInput && <slots.CurrentPageInput />}
+              {slots.GoToPreviousPage && <slots.GoToPreviousPage />}
+              {slots.GoToNextPage && <slots.GoToNextPage />}
+              {slots.ZoomOut && <slots.ZoomOut />}
+              {slots.ZoomIn && <slots.ZoomIn />}
+            </div>
+          );
+        }}
+      </Toolbar>
+    ),
+  });
 
   const [resources, setResources] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -671,6 +661,7 @@ const VideoDescriptionComponent = ({
 
 const VideoPlayer = ({ thumbnail, video, userId, courseId, setProgress }) => {
   const [isPlaying, setIsPlaying] = useState(false);
+  const [timeSpent, setTimeSpent] = useState(0);
   const [volume, setVolume] = useState(1);
   const [isMuted, setIsMuted] = useState(false);
   const [playbackSpeed, setPlaybackSpeed] = useState(1);
@@ -680,13 +671,109 @@ const VideoPlayer = ({ thumbnail, video, userId, courseId, setProgress }) => {
   const timeoutRef = useRef(null);
   const [watchedVideos, setWatchedVideos] = useState([]);
 
+  useEffect(() => {
+    if (videoRef.current) {
+      videoRef.current.pause();
+      videoRef.current.currentTime = 0;
+    }
+    setIsPlaying(false);
+    setTimeSpent(0);
+  }, [video]);
+
+  useEffect(() => {
+    let interval;
+    if (isPlaying) {
+      interval = setInterval(() => {
+        setTimeSpent((prev) => prev + 1);
+      }, 1000);
+    } else {
+      clearInterval(interval);
+    }
+    return () => clearInterval(interval);
+  }, [isPlaying]);
+
+  useEffect(() => {
+    const handleUnload = async () => {
+      if (timeSpent > 0 && videoRef.current) {
+        const videoId = video.split("/").pop();
+        try {
+          await axios.post(
+            "http://localhost:5000/api/student/video-timing",
+            {
+              userId,
+              courseId,
+              videoId,
+              timeSpent,
+            },
+            { withCredentials: true }
+          );
+        } catch (error) {
+          console.error("Error updating video progress on unload:", error);
+        }
+      }
+    };
+  
+    window.addEventListener("beforeunload", handleUnload);
+  
+    return () => {
+      window.removeEventListener("beforeunload", handleUnload);
+    };
+  }, [timeSpent, video]); // Dependencies to ensure the latest state is used
+  
+  useEffect(() => {
+    return () => {
+      // When video changes, ensure the current `timeSpent` is sent to the server
+      if (timeSpent > 0 && videoRef.current) {
+        handleTimeUpdate();
+      }
+    };
+  }, [video]);
+  
+
+  useEffect(() => {
+    // Function to handle cleanup on video change
+    const updateTimeOnVideoChange = async () => {
+      if (timeSpent > 0) {
+        try {
+          await handleTimeUpdate(); // Explicitly send the update
+        } catch (error) {
+          console.error("Error updating video progress on video change:", error);
+        }
+      }
+    };
+  
+    updateTimeOnVideoChange();
+  
+    // Cleanup function
+    return () => {
+      updateTimeOnVideoChange();
+    };
+  }, [video]);
+  
+  const handleTimeUpdate = async () => {
+    if (!videoRef.current) return;
+    const videoId = video.split("/").pop();
+    try {
+      await axios.post(
+        "http://localhost:5000/api/student/video-timing",
+        {
+          userId,
+          courseId,
+          videoId,
+          timeSpent,
+        },
+        { withCredentials: true }
+      );
+    } catch (error) {
+      console.error("Error updating video progress:", error);
+    }
+    setTimeSpent(0);
+  };
+  
   const handleVideoEnd = async (videoUrl) => {
     const videoId = videoUrl.split("/").pop(); // Extract the video ID
-
     // Update watchedVideos state to reflect the watched video
     setWatchedVideos((prev) => [...new Set([...prev, videoId])]);
-
-    console.log(userId, courseId, videoId);
 
     try {
       // Send completion data to the server
@@ -696,6 +783,16 @@ const VideoPlayer = ({ thumbnail, video, userId, courseId, setProgress }) => {
           userId, // Assuming userId is already defined
           courseId, // Assuming courseId is already defined
           videoId,
+        },
+        { withCredentials: true }
+      );
+      await axios.post(
+        "http://localhost:5000/api/student/video-timing",
+        {
+          userId,
+          courseId,
+          videoId,
+          timeSpent: timeSpent,
         },
         { withCredentials: true }
       );
@@ -714,6 +811,7 @@ const VideoPlayer = ({ thumbnail, video, userId, courseId, setProgress }) => {
     } catch (error) {
       console.error("Error recording video completion", error);
     }
+    setTimeSpent(0);
   };
 
   const togglePlayPause = () => {
@@ -749,6 +847,7 @@ const VideoPlayer = ({ thumbnail, video, userId, courseId, setProgress }) => {
     setIsFullscreen(!isFullscreen);
   };
 
+  
   const handleMouseMove = () => {
     setShowControls(true); // Show controls on mouse move
     clearTimeout(timeoutRef.current); // Clear existing timeout
@@ -756,6 +855,25 @@ const VideoPlayer = ({ thumbnail, video, userId, courseId, setProgress }) => {
       setShowControls(false); // Hide controls after delay
     }, 3000); // Adjust delay as needed
   };
+  useEffect(() => {
+    const videoElement = videoRef.current;
+
+    const handlePlay = () => setIsPlaying(true);
+    const handlePause = () => setIsPlaying(false);
+
+    if (videoElement) {
+      videoElement.addEventListener("play", handlePlay);
+      videoElement.addEventListener("pause", handlePause);
+    }
+
+    // Cleanup event listeners when component unmounts
+    return () => {
+      if (videoElement) {
+        videoElement.removeEventListener("play", handlePlay);
+        videoElement.removeEventListener("pause", handlePause);
+      }
+    };
+  }, []);
 
   useEffect(() => {
     const videoElement = videoRef.current;
@@ -770,7 +888,6 @@ const VideoPlayer = ({ thumbnail, video, userId, courseId, setProgress }) => {
       clearTimeout(timeoutRef.current);
     };
   }, []);
-
   return (
     <div
       className="relative w-full h-80 bg-black rounded-lg overflow-hidden"
@@ -782,7 +899,11 @@ const VideoPlayer = ({ thumbnail, video, userId, courseId, setProgress }) => {
         poster={thumbnail}
         onClick={togglePlayPause}
         src={video}
-        onEnded={() => handleVideoEnd(video)}
+        onEnded={() => {
+          handleVideoEnd(video);
+          setIsPlaying(false);
+        }}
+       
       ></video>
 
       {showControls && (
@@ -877,6 +998,7 @@ const OverviewPage = () => {
   const [isbibilography, setisbibilography] = useState(true);
   const [userId, setUserId] = useState();
   const [progress, setProgress] = useState();
+  const [hasGivenFeedback, setHasGivenFeedback] = useState(null);
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -889,12 +1011,31 @@ const OverviewPage = () => {
         );
         setUserId(response.data.user); // Set user data
       } catch (err) {
-        setUser(null);
+        setUserId(null);
       }
     };
 
     fetchUser();
   }, [navigate]);
+  useEffect(() => {
+    const checkFeedback = async () => {
+      try {
+        const response = await axios.get(
+          `http://localhost:5000/api/feedback/exists/${course._id}/${userId.id}`
+        );
+        setHasGivenFeedback(response.data.hasGivenFeedback);
+      } catch (error) {
+        console.error("Error checking feedback:", error);
+        setHasGivenFeedback(false); // Assuming no feedback if there's an error
+      }
+    };
+
+    if (course?._id && userId?.id) {
+      checkFeedback();
+    }
+  }, [course, userId]);
+
+  console.log(hasGivenFeedback);
 
   const [selectedVideo, setSelectedVideo] = useState({
     title: "Loading...",
@@ -931,6 +1072,7 @@ const OverviewPage = () => {
 
     fetchInstructorName();
   }, [course?.userId]);
+  
 
   useEffect(() => {
     if (course?.weeks?.length > 0 && course.weeks[0].videos?.length > 0) {
@@ -1098,7 +1240,9 @@ const OverviewPage = () => {
                   />
                   <div className="mt-4" />
                   {isbibilography && <BibliographySection />}
-                  <FeedbackComponent userId={userId?.id} courseId={query} />
+                  {!hasGivenFeedback && (
+                    <FeedbackComponent userId={userId?.id} courseId={query} />
+                  )}
                 </div>
               </div>
             </div>

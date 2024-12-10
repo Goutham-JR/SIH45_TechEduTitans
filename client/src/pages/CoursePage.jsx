@@ -1,5 +1,6 @@
 import { React, useState, useEffect } from "react";
-import { useLocation, useNavigate  } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
+import Confetti from "react-confetti";
 import axios from "axios";
 import moment from "moment";
 
@@ -11,6 +12,11 @@ const CourseCard = () => {
   const [instructorName, setInstructorName] = useState("");
   const [courseDuration, setcourseDuration] = useState(null);
   const [courseresource, setcourseresource] = useState(null);
+  const [userId, setUserId] = useState();
+  const [isEnrolled, setIsEnrolled] = useState(null); // null indicates the status hasn't been checked yet
+  const [loading, setLoading] = useState(true); // For loading state
+  const [showCelebration, setShowCelebration] = useState(false); // Celebration popup state
+  const [enrollmentCount, setEnrollmentCount] = useState(0); 
 
   useEffect(() => {
     const fetchData = async () => {
@@ -34,6 +40,28 @@ const CourseCard = () => {
     };
 
     fetchData();
+  }, [query]);
+
+
+  useEffect(() => {
+    const fetchEnrollmentCount = async () => {
+      try {
+        setLoading(true); // Start loading
+        const response = await axios.get(
+          `http://localhost:5000/api/student/enrollments/count/${query}`
+        );
+        setEnrollmentCount(response.data.count || 0); // Update state with count
+      } catch (error) {
+        console.error("Error fetching enrollment count:", error);
+        setEnrollmentCount(0); // Set count to 0 on error
+      } finally {
+        setLoading(false); // Stop loading
+      }
+    };
+
+    if (query) {
+      fetchEnrollmentCount();
+    }
   }, [query]);
 
   useEffect(() => {
@@ -108,6 +136,73 @@ const CourseCard = () => {
     fetchInstructorName();
   }, [course?.userId]);
 
+  useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        const response = await axios.get(
+          "http://localhost:5000/api/protected/check-auth",
+          {
+            withCredentials: true, // Send cookies with the request
+          }
+        );
+        setUserId(response.data.user); // Set user data
+      } catch (err) {
+        setUser(null);
+      }
+    };
+
+    fetchUser();
+  }, [navigate]);
+
+  useEffect(() => {
+    const checkEnrollmentStatus = async () => {
+      try {
+        setLoading(true); // Start loading
+        const response = await axios.get(
+          `http://localhost:5000/api/student/enrollments/check/${query}/${userId.id}`
+        );
+        setIsEnrolled(response.data.isEnrolled); // Set enrollment status
+      } catch (error) {
+        console.error("Error checking enrollment status:", error);
+        setIsEnrolled(false); // Default to not enrolled if there's an error
+      } finally {
+        setLoading(false); // Stop loading
+      }
+    };
+
+    if (query && userId) {
+      checkEnrollmentStatus();
+    }
+  }, [query, userId]);
+
+  const handleEnrollRequest = async () => {
+    if (isEnrolled) {
+      navigate("/coursevideo", { state: { query: course._id } });
+    } else {
+      try {
+        // Call the API to enroll the user
+        const response = await axios.post(
+          `http://localhost:5000/api/student/enrollments/enroll`,
+          {
+            courseId: query,
+            userId: userId.id,
+          },
+          { withCredentials: true } // Send cookies if needed
+        );
+
+        if (response.data.success) {
+          setShowCelebration(true);
+          setIsEnrolled(true); // Update the state to reflect enrollment
+        } else {
+          alert("Failed to enroll. Please try again.");
+        }
+      } catch (error) {
+        console.error("Error enrolling in the course:", error);
+        alert("Something went wrong while enrolling. Please try again.");
+      }
+    }
+  };
+
   return (
     <div className="bg-gray-900 text-white min-h-screen p-10">
       {/* Header Section */}
@@ -125,7 +220,7 @@ const CourseCard = () => {
             <p>
               <span className="text-yellow-400 font-semibold">4.6</span>{" "}
               <span className="text-gray-400">(124,490 ratings)</span>{" "}
-              <span className="text-gray-400">405,091 students</span>
+              <span className="text-gray-400">18,451 students</span>
             </p>
           </div>
           <p className="text-gray-500">Created by {instructorName}</p>
@@ -214,15 +309,23 @@ const CourseCard = () => {
                 {course?.level}
               </p>
               <p>
-                <span className="font-bold">👥 Student Enrolled:</span> 441
+                <span className="font-bold">👥 Student Enrolled:</span> {enrollmentCount}
               </p>
               <p>
                 <span className="font-bold">🌍 Language:</span>{" "}
                 {course?.language}
               </p>
             </div>
-            <button className="bg-purple-600 w-full py-3 mt-6 rounded-md text-white font-semibold" onClick={() => navigate("/coursevideo", { state: { query: course._id} })}>
-              Enroll the Course →
+            <button
+              className="bg-purple-600 w-full py-3 mt-6 rounded-md text-white font-semibold"
+              onClick={handleEnrollRequest}
+              disabled={loading}
+            >
+              {loading
+                ? "Checking Enrollment..." // Loading state
+                : isEnrolled
+                ? "Start Course →" // If enrolled
+                : "Enroll the Course →"}{" "}
             </button>
             <div className="flex justify-between mt-4 space-x-2">
               <button className="bg-gray-700 w-1/2 py-2 rounded-md text-gray-300">
@@ -235,7 +338,6 @@ const CourseCard = () => {
           </div>
         </div>
       </div>
-
 
       {/* Requirements Section */}
       <div className="mt-6 bg-gray-800 p-6 rounded-lg">
@@ -258,6 +360,70 @@ const CourseCard = () => {
           )}
         </ul>
       </div>
+      {showCelebration && (
+        <div className="fixed inset-0 bg-black bg-opacity-70 z-50 flex items-center justify-center">
+          {/* Full-Screen Confetti */}
+          <div className="fixed inset-0 pointer-events-none">
+            <Confetti
+              width={window.innerWidth}
+              height={window.innerHeight}
+              numberOfPieces={500} // Number of pieces for continuous shower
+              gravity={0.2} // Slower fall for a smooth effect
+              wind={0.02} // Gentle horizontal motion
+              colors={[
+                "#FFC700",
+                "#FF5733",
+                "#33D9FF",
+                "#8E44AD",
+                "#28B463",
+                "#FFB6C1",
+              ]} // Vibrant colors
+              recycle={true} // Continuous confetti shower
+            />
+          </div>
+
+          {/* Celebration Popup */}
+          <div className="relative bg-white p-8 rounded-lg shadow-lg text-center w-[90%] max-w-md">
+            {/* Success Icon */}
+            <div className="flex items-center justify-center bg-green-100 w-20 h-20 rounded-full mx-auto mb-6">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-12 w-12 text-green-600 animate-bounce"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth={2}
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                />
+              </svg>
+            </div>
+
+            {/* Success Message */}
+            <h2 className="text-3xl font-bold text-gray-800 mb-4">
+              Successfully Enrolled!
+            </h2>
+            <p className="text-gray-600 mb-6">
+              You have successfully enrolled in the course. Get ready to explore
+              the content and start learning!
+            </p>
+
+            {/* Action Button */}
+            <button
+              className="px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition duration-300"
+              onClick={() => {
+                setShowCelebration(false); // Stop confetti
+                navigate("/coursevideo", { state: { query: course._id } }); // Navigate to the course
+              }}
+            >
+              Go to Course
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

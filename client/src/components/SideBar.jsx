@@ -40,7 +40,7 @@ const SIDEBAR_ITEMS = [
     href: "/StudentLeaderBoard",
   },
   { name: "Calendar", icon: Calendar, color: "#3B82F6", href: "/StudentCalender" },
-  { name: "Settings", icon: Settings, color: "#6EE7B7", href: "/settings" },
+  { name: "Settings", icon: Settings, color: "#6EE7B7", href: "/setting" },
 ];
 
 const Sidebar = () => {
