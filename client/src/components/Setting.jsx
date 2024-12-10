@@ -127,123 +127,124 @@ const PersonalInformation = ({
   };
 
   return (
-    <div className="personal-information mt-8 z-0">
-      <h3 className="text-lg font-semibold text-gray-100">
-        Update Personal Information
-      </h3>
-      <div className="mb-4">
-        <label className="block text-gray-400">Name</label>
-        <input
-          type="text"
-          placeholder="Enter your name"
-          className="w-full sm:w-96 p-2 mt-2 rounded bg-gray-700 text-gray-300 cursor-not-allowed"
-          value={userDetail?.name}
-          onChange={(e) => setName(e.target.value)}
-        />
-      </div>
-      <div className="mb-4">
-        <label className="block text-gray-400">Phone Number</label>
-        <input
-          type="text"
-          placeholder="Enter your phone number"
-          className="w-full sm:w-96 p-2 mt-2 rounded bg-gray-700 text-gray-300 cursor-not-allowed"
-          value={userDetail?.phoneNumber}
-          onChange={(e) => setPhone(e.target.value)}
-        />
-      </div>
-      <div className="mb-4">
-        <label className="block text-gray-400">Gender</label>
-        <div className="flex gap-4">
-          <label className="flex items-center text-gray-400">
-            <input
-              type="radio"
-              name="gender"
-              value="male"
-              checked={gender === "male"}
-              onChange={(e) => setGender(e.target.value)}
-              className="mr-3"
-            />
-            Male
-          </label>
-          <label className="flex items-center text-gray-400">
-            <input
-              type="radio"
-              name="gender"
-              value="female"
-              checked={gender === "female"}
-              onChange={(e) => setGender(e.target.value)}
-              className="mr-3"
-            />
-            Female
-          </label>
-          <label className="flex items-center text-gray-400">
-            <input
-              type="radio"
-              name="gender"
-              value="other"
-              checked={gender === "other"}
-              onChange={(e) => setGender(e.target.value)}
-              className="mr-3"
-            />
-            Other
-          </label>
-        </div>
-      </div>
-      <div className="mb-4">
-        <label className="block text-gray-400">College Name</label>
-        <input
-          type="text"
-          placeholder="Enter your college name"
-          className="w-full sm:w-96 p-2 mt-2 rounded bg-gray-700 text-gray-300"
-          value={userDetail?.collegeName}
-          onChange={(e) => setCollegeName(e.target.value)}
-        />
-      </div>
-      <div className="mb-4">
-        <label className="block text-gray-400">Date of Birth</label>
-        <input
-          type="date"
-          className="w-full sm:w-96 p-2 mt-2 rounded bg-gray-700 text-gray-300"
-          value={formatDate(userDetail?.dob)} // Format the dob before displaying
-          onChange={(e) => setDob(e.target.value)}
-        />
-      </div>
-      <div className="flex gap-4">
-        <button
-          onClick={handleSubmit}
-          disabled={loading}
-          className={`${
-            loading ? "bg-indigo-400" : "bg-indigo-600 hover:bg-indigo-700"
-          } text-white font-bold py-2 px-4 rounded transition duration-200 w-full sm:w-auto`}
-        >
-          {loading ? "Saving..." : "Save Changes"}
-        </button>
-        <button
-          onClick={onCancel}
-          className="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded transition duration-200 w-full sm:w-auto"
-        >
-          Cancel
-        </button>
-      </div>
+    
+    <div className="pb-10">
+  {/* Snackbar moved outside the personal-information component */}
+  <Snackbar
+  open={snackbar.open}
+  autoHideDuration={3000}
+  onClose={() => setSnackbar({ open: false, message: "", severity: "" })}
+  anchorOrigin={{ vertical: "bottom", horizontal: "right" }} // Ensure this is correctly formatted
+>
+  <Alert
+    onClose={() => setSnackbar({ open: false, message: "", severity: "" })}
+    severity={snackbar.severity}
+    variant="filled"
+  >
+    {snackbar.message}
+  </Alert>
+</Snackbar>
 
-      {/* Snackbar for notifications */}
-      <Snackbar
-        open={snackbar.open}
-        autoHideDuration={3000}
-        onClose={() => setSnackbar({ open: false, message: "", severity: "" })}
-        anchorOrigin={{ vertical: "top", horizontal: "center" }}
-      >
-        <Alert
-          onClose={() =>
-            setSnackbar({ open: false, message: "", severity: "" })
-          }
-          severity={snackbar.severity}
-          variant="filled"
-        >
-          {snackbar.message}
-        </Alert>
-      </Snackbar>
+
+  <div className="personal-information mt-8 z-0">
+    <h3 className="text-lg font-semibold text-gray-100">Update Personal Information</h3>
+    <div className="mb-4">
+      <label className="block text-gray-400">Name</label>
+      <input
+        type="text"
+        placeholder="Enter your name"
+        className="w-full sm:w-96 p-2 mt-2 rounded bg-gray-700 text-gray-300 cursor-not-allowed"
+        value={userDetail?.name}
+        onChange={(e) => setName(e.target.value)}
+      />
     </div>
+    <div className="mb-4">
+      <label className="block text-gray-400">Phone Number</label>
+      <input
+        type="text"
+        placeholder="Enter your phone number"
+        className="w-full sm:w-96 p-2 mt-2 rounded bg-gray-700 text-gray-300 cursor-not-allowed"
+        value={userDetail?.phoneNumber}
+        onChange={(e) => setPhone(e.target.value)}
+      />
+    </div>
+    <div className="mb-4">
+      <label className="block text-gray-400">Gender</label>
+      <div className="flex gap-4">
+        <label className="flex items-center text-gray-400">
+          <input
+            type="radio"
+            name="gender"
+            value="male"
+            checked={gender === "male"}
+            onChange={(e) => setGender(e.target.value)}
+            className="mr-3"
+          />
+          Male
+        </label>
+        <label className="flex items-center text-gray-400">
+          <input
+            type="radio"
+            name="gender"
+            value="female"
+            checked={gender === "female"}
+            onChange={(e) => setGender(e.target.value)}
+            className="mr-3"
+          />
+          Female
+        </label>
+        <label className="flex items-center text-gray-400">
+          <input
+            type="radio"
+            name="gender"
+            value="other"
+            checked={gender === "other"}
+            onChange={(e) => setGender(e.target.value)}
+            className="mr-3"
+          />
+          Other
+        </label>
+      </div>
+    </div>
+    <div className="mb-4">
+      <label className="block text-gray-400">College Name</label>
+      <input
+        type="text"
+        placeholder="Enter your college name"
+        className="w-full sm:w-96 p-2 mt-2 rounded bg-gray-700 text-gray-300"
+        value={userDetail?.collegeName}
+        onChange={(e) => setCollegeName(e.target.value)}
+      />
+    </div>
+    <div className="mb-4">
+      <label className="block text-gray-400">Date of Birth</label>
+      <input
+        type="date"
+        className="w-full sm:w-96 p-2 mt-2 rounded bg-gray-700 text-gray-300"
+        value={formatDate(userDetail?.dob)} // Format the dob before displaying
+        onChange={(e) => setDob(e.target.value)}
+      />
+    </div>
+    <div className="flex gap-4">
+      <button
+        onClick={handleSubmit}
+        disabled={loading}
+        className={`${
+          loading ? "bg-indigo-400" : "bg-indigo-600 hover:bg-indigo-700"
+        } text-white font-bold py-2 px-4 rounded transition duration-200 w-full sm:w-auto`}
+      >
+        {loading ? "Saving..." : "Save Changes"}
+      </button>
+      <button
+        onClick={onCancel}
+        className="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded transition duration-200 w-full sm:w-auto"
+      >
+        Cancel
+      </button>
+    </div>
+  </div>
+</div>
+
   );
 };
 
@@ -289,8 +290,8 @@ const PasswordUpdate = ({ onChangePassword, onCancel }) => {
     );
 
     if (error) {
-      const errorMessages = error.details.map((err) => err.message).join(", ");
-      setSnackbar({ open: true, message: errorMessages, severity: "error" });
+      const errorMessages = error.details[0].message;
+      setSnackbar({ open: true, message: errorMessages, severity: 'error' });
       setLoading(false);
       return;
     }
@@ -378,8 +379,8 @@ const PasswordUpdate = ({ onChangePassword, onCancel }) => {
       <Snackbar
         open={snackbar.open}
         autoHideDuration={3000}
-        onClose={() => setSnackbar({ open: false, message: "", severity: "" })}
-        anchorOrigin={{ vertical: "top", horizontal: "center" }}
+        onClose={() => setSnackbar({ open: false, message: '', severity: '' })}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
       >
         <Alert
           onClose={() =>
@@ -675,7 +676,7 @@ const SkillInput = () => {
         open={snackbar.open}
         autoHideDuration={3000}
         onClose={() => setSnackbar({ open: false, message: "", severity: "" })}
-        anchorOrigin={{ vertical: "top", horizontal: "center" }}
+        anchorOrigin={{ vertical: "right", horizontal: "right" }}
       >
         <Alert
           onClose={() =>
@@ -881,7 +882,7 @@ const Address = () => {
         open={snackbar.open}
         autoHideDuration={3000}
         onClose={() => setSnackbar({ open: false, message: "", severity: "" })}
-        anchorOrigin={{ vertical: "top", horizontal: "center" }}
+        anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
       >
         <Alert
           onClose={() =>

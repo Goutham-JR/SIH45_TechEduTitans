@@ -32,6 +32,7 @@ import CoursePage from './pages/CoursePage'
 import CourseVideoPage from './pages/VideoPage';
 import InstructorProfile from './components/InstructorProfile';
 import Quizmain from './pages/Quiz';
+import Recommendation from './pages/Recommendation';
 
 
 function App() {
@@ -71,6 +72,8 @@ function App() {
         <Route path="/CourseVideo" element={< CourseVideoPage/>} />
         <Route path="/InstructorProfile" element={< InstructorProfile/>} />
         <Route path="/quizmain" element={< Quizmain/>} />
+        <Route path="/recommendation" element={< Recommendation/>} />
+
       </Routes>
     </BrowserRouter>
   );

@@ -1,204 +1,187 @@
-import React, { useState } from "react";
-import { motion } from "framer-motion";
-import { Timer } from "lucide-react";
+import React, { useState, useEffect } from 'react';
+import axios from 'axios'; // Make sure to install axios using npm or yarn
+import { motion } from 'framer-motion';
+import { Timer } from 'lucide-react';
 
-const QuizzerPage = () => {
-  // Quiz data
-  const questions = [
-    {
-      id: 1,
-      question: "Which of the following is not a programming language?",
-      options: ["Python", "HTML", "Java", "C++"],
-      correctAnswer: "HTML",
-    },
-    {
-      id: 2,
-      question: "What is the capital of France?",
-      options: ["Paris", "London", "Berlin", "Madrid"],
-      correctAnswer: "Paris",
-    },
-    {
-      id: 3,
-      question: "Which of these is a JavaScript framework?",
-      options: ["Django", "React", "Angular", "Flask"],
-      correctAnswer: "React",
-    },
-    {
-      id: 4,
-      question: "Which one is used for styling web pages?",
-      options: ["HTML", "CSS", "JavaScript", "Python"],
-      correctAnswer: "CSS",
-    },
-  ];
-
-  // State for current question, score, and answer feedback
-  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
-  const [answers, setAnswers] = useState([]); // To store answers
+const Quiz = () => {
+  const [questions, setQuestions] = useState([]);
+  const [answers, setAnswers] = useState({});
+  const [submitted, setSubmitted] = useState(false);
   const [score, setScore] = useState(0);
-  const [quizCompleted, setQuizCompleted] = useState(false);
+  const [timeLeft, setTimeLeft] = useState(300); // 5 minutes timer
+  const [error, setError] = useState(null); // Error state for API errors
 
-  // Timer state
-  const [timeLeft, setTimeLeft] = useState(10);
-  React.useEffect(() => {
-    if (timeLeft > 0 && !quizCompleted) {
-      const timer = setTimeout(() => setTimeLeft(timeLeft - 1), 1000);
-      return () => clearTimeout(timer);
-    }
-  }, [timeLeft, quizCompleted]);
+  useEffect(() => {
+    const fetchQuestions = async () => {
+      try {
+        const quizId = '6752ac3bc09817e66d22aabb'; 
+        const response = await axios.get(`http://localhost:5000/api/quiz/questions`);
 
-  const currentQuestion = questions[currentQuestionIndex];
+        // Check if the response is an array of questions
+        if (Array.isArray(response.data)) {
+          setQuestions(response.data);
+        } else {
+            console.log(response.data);
+          setError('Failed to load questions. Please try again later.');
+        }
+      } catch (err) {
+        console.log(err);
+        console.error('API Error:', err.response || err.message);
+        setError('Failed to load questions. Please try again later.');
+      }
+    };
 
-  // Handle answer selection
-  const handleAnswerClick = (answer) => {
-    if (!quizCompleted) {
-      // Store answer without showing correct or incorrect colors
-      const correct = answer === currentQuestion.correctAnswer;
-      setAnswers((prevAnswers) => [
-        ...prevAnswers,
-        { questionId: currentQuestion.id, answer, isCorrect: correct },
-      ]);
-    }
+    fetchQuestions();
+  }, []);
+
+  useEffect(() => {
+    // Timer logic to update timeLeft every second
+    const timer = setInterval(() => {
+      setTimeLeft((prev) => (prev > 0 ? prev - 1 : 0));
+    }, 1000);
+
+    // Cleanup timer on component unmount
+    return () => clearInterval(timer);
+  }, []);
+
+  const handleAnswerChange = (questionId, selectedOption) => {
+    setAnswers((prevAnswers) => ({
+      ...prevAnswers,
+      [questionId]: selectedOption,
+    }));
   };
 
-  const handleNextQuestion = () => {
-    if (currentQuestionIndex < questions.length - 1) {
-      setCurrentQuestionIndex(currentQuestionIndex + 1);
-    } else {
-      setQuizCompleted(true); // Quiz is completed
-    }
+  const handleSubmit = () => {
+    let calculatedScore = 0;
+    questions.forEach((question) => {
+      if (answers[question._id] === question.correctAnswer) {
+        calculatedScore += 1;
+      }
+    });
+    setScore(calculatedScore);
+    setSubmitted(true);
   };
 
-  const handleSubmitQuiz = () => {
-    // Calculate score after the quiz is completed
-    const totalScore = answers.reduce(
-      (acc, curr) =>
-        questions.find((q) => q.id === curr.questionId).correctAnswer ===
-        curr.answer
-          ? acc + 1
-          : acc,
-      0
-    );
-    setScore(totalScore);
-    setQuizCompleted(true);
+  const handleReset = () => {
+    setAnswers({});
+    setSubmitted(false);
+    setScore(0);
+    setTimeLeft(300);
   };
 
   return (
-    <div
-      className={`flex flex-col items-center justify-center min-h-screen ${
-        quizCompleted ? "bg-gray-700" : "bg-gray-100"
-      } transition-all duration-300`}
-    >
-      <div className="w-full max-w-2xl bg-white shadow-lg rounded-lg p-6">
-        {/* Timer */}
-        <div className="flex items-center space-x-2 mb-4">
-          <Timer className="text-red-500 w-6 h-6" />
-          <p className="text-lg font-medium text-gray-600">
-            Time Left:{" "}
-            <span className="font-semibold text-red-500">{timeLeft}s</span>
-          </p>
+    <div className="max-w-3xl mx-auto mt-10 p-5">
+      <div className="flex justify-between items-center mb-5">
+        <h1 className="text-3xl font-bold">Quiz Page</h1>
+        <div className="flex items-center gap-2">
+          <Timer className="text-gray-500" />
+          <span className="text-lg font-semibold">
+            {Math.floor(timeLeft / 60)}:{String(timeLeft % 60).padStart(2, '0')}
+          </span>
         </div>
-
-        {/* Questions */}
-        {!quizCompleted && (
-          <>
-            <h2 className="text-xl font-semibold text-gray-800 mb-6">
-              {currentQuestion.question}
-            </h2>
-
-            {/* Options */}
-            <div className="space-y-4">
-              {currentQuestion.options.map((option, index) => {
-                const answerData = answers.find(
-                  (ans) => ans.questionId === currentQuestion.id
-                );
-                const isSelected = answerData?.answer === option;
-                const isAnswered = answerData !== undefined;
-
-                return (
-                  <motion.button
-                    key={index}
-                    className={`w-full py-3 px-4 text-left border rounded-lg font-medium ${
-                      isAnswered
-                        ? "bg-blue-700 text-white"
-                        : isSelected
-                        ? "bg-gray-700 text-white"
-                        : "bg-gray-700 hover:bg-gray-100"
-                    }`}
-                    onClick={() => handleAnswerClick(option)}
-                    disabled={isAnswered} // Disable after answer is selected
-                  >
-                    {option}
-                  </motion.button>
-                );
-              })}
-            </div>
-
-            {/* Next Question Button */}
-            {answers.find((ans) => ans.questionId === currentQuestion.id) && (
-              <motion.button
-                onClick={handleNextQuestion}
-                className="mt-6 w-full py-3 px-4 bg-green-600 text-white font-semibold rounded-lg hover:bg-blue-100 transition"
-                whileTap={{ scale: 0.95 }}
-              >
-                Next Question
-              </motion.button>
-            )}
-
-            {/* Submit Quiz Button */}
-            {currentQuestionIndex === questions.length - 1 && (
-              <motion.button
-                onClick={handleSubmitQuiz}
-                className="mt-6 w-full py-3 px-4 bg-green-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition"
-                whileTap={{ scale: 0.95 }}
-              >
-                Submit Quiz
-              </motion.button>
-            )}
-          </>
-        )}
-
-        {/* Quiz Summary */}
-        {quizCompleted && (
-          <div className="mt-8 text-center">
-            <h3 className="text-xl font-semibold text-gray-800">Quiz Completed!</h3>
-            <p className="text-lg text-gray-600">
-              You got {score} out of {questions.length} questions correct.
-            </p>
-            <div className="mt-4 space-y-4">
-              {questions.map((question) => {
-                const userAnswer = answers.find(
-                  (ans) => ans.questionId === question.id
-                )?.answer;
-                const isCorrect = userAnswer === question.correctAnswer;
-                return (
-                  <div
-                    key={question.id}
-                    className={`space-y-2 ${
-                      isCorrect ? "text-green-600" : "text-red-600"
-                    }`}
-                  >
-                    <p className="font-medium text-gray-800">{question.question}</p>
-                    <div className="space-x-2">
-                      <span
-                        className={`inline-block py-1 px-3 rounded-md text-sm ${
-                          isCorrect ? "bg-green-100" : "bg-red-100"
-                        }`}
-                      >
-                        Your Answer: {userAnswer}
-                      </span>
-                      <span className="text-sm text-gray-500">
-                        Correct Answer: {question.correctAnswer}
-                      </span>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        )}
       </div>
+
+      {error && (
+        <div className="text-red-600 text-center mb-5">{error}</div>
+      )}
+
+      {!submitted && questions.length > 0 && (
+        <div>
+          {questions.map((question) => (
+            <motion.div
+              key={question._id}
+              className="bg-gray-700 shadow-md rounded-md p-4 mb-5"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3 }}
+            >
+              <h2 className="text-xl font-semibold">{question.question}</h2>
+              <div className="mt-3">
+                {question.choices.map((option, index) => (
+                  <label
+                    key={index}
+                    className={`flex items-center gap-3 p-2 rounded-md cursor-pointer transition ${
+                      answers[question._id] === option
+                        ? 'bg-blue-500 border border-blue-500'
+                        : 'bg-gray-700 hover:bg-gray-500'
+                    }`}
+                  >
+                    <input
+                      type="radio"
+                      name={question._id}
+                      value={option}
+                      className="hidden"
+                      onChange={() => handleAnswerChange(question._id, option)}
+                    />
+                    <div
+                      className={`w-5 h-5 border rounded-full ${
+                        answers[question._id] === option
+                          ? 'bg-blue-500'
+                          : 'border-gray-400'
+                      }`}
+                    ></div>
+                    <span>{option}</span>
+                  </label>
+                ))}
+              </div>
+            </motion.div>
+          ))}
+        </div>
+      )}
+
+      {submitted && (
+        <div>
+          {questions.map((question) => (
+            <motion.div
+              key={question._id}
+              className="bg-gray-700 shadow-md rounded-md p-4 mb-5"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3 }}
+            >
+              <h2 className="text-xl font-semibold">{question.question}</h2>
+              <p
+                className={`mt-2 ${
+                  answers[question._id] === question.correctAnswer
+                    ? 'text-green-600'
+                    : 'text-red-600'
+                }`}
+              >
+                Your Answer: {answers[question._id] || 'Not Answered'}
+              </p>
+              <p className="text-gray-100">
+                Correct Answer: {question.correctAnswer}
+              </p>
+            </motion.div>
+          ))}
+          <h3 className="text-2xl font-semibold">
+            Your Score: {score} / {questions.length}
+          </h3>
+          <button
+            className="mt-5 px-4 py-2 bg-blue-500 text-white rounded-md shadow-md hover:bg-blue-600"
+            onClick={handleReset}
+          >
+            Try Again
+          </button>
+        </div>
+      )}
+
+      {!submitted && questions.length > 0 && (
+        <button
+          className="mt-5 px-4 py-2 bg-green-500 text-white rounded-md shadow-md hover:bg-green-600"
+          onClick={handleSubmit}
+        >
+          Submit
+        </button>
+      )}
+
+      {timeLeft === 0 && !submitted && (
+        <div className="text-red-600 mt-5 text-center">
+          Time is up! Please submit the quiz.
+        </div>
+      )}
     </div>
   );
 };
 
-export default QuizzerPage;
+export default Quiz;

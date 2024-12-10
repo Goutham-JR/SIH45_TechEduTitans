@@ -15,6 +15,9 @@ const addressRouter = require("../routers/addressRouter");
 const deleteRouter = require('../routers/deleteRouter');
 const studentRouter = require('../routers/studentRouter');
 const feedbackRouter = require('../routers/feedbackRouter');
+const quizmainRouter = require('../routers/quizsampleRouter');
+const recommendcourseRouter = require("../routers/recommendRouter");
+
 const { connectDB } = require('../config/db');
 
 // Initialize app and connect to DB
@@ -77,6 +80,9 @@ app.use("/api/skills", skillRouter);
 app.use("/api/address", addressRouter);
 app.use('/api/account', deleteRouter);
 app.use('/api/feedback', feedbackRouter);
+app.use('/api/quiz', quizmainRouter);
+app.use("/api/courses", recommendcourseRouter);
+
 
 
 

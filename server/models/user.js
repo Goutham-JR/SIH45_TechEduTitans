@@ -17,6 +17,7 @@ const userSchema = new mongoose.Schema(
     pincode: { type: String, default: null },
     country: { type: String, default: "India" },
     role: { type: String, default: "Student" },
+    status: { type: String, default: "Active" },
   },
   {
     timestamps: true,

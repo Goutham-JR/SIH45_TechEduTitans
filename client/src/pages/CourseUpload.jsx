@@ -534,8 +534,8 @@ const validateCourses = (courses) => {
     let errorMessage = "";
   
     // Check if there are at least 5 questions
-    if (quizData.questions.length < 5) {
-      errorMessage = "The quiz must have at least 5 questions.";
+    if (quizData.questions.length < 2) {
+      errorMessage = "The quiz must have at least 2 questions.";
       setErrorMessage(errorMessage);
       setOpenSnackbar(true);
       return;
