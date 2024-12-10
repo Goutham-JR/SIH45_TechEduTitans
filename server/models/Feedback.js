@@ -24,7 +24,8 @@ const FeedbackSchema = new mongoose.Schema(
       required: true, 
     },
     courseId: {
-      type: String,
+      type:  mongoose.Schema.Types.ObjectId,
+      ref: "Course",
       required: true,
     },
   },

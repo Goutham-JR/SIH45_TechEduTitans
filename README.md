@@ -16,7 +16,9 @@ npm start
 //server
 npm install concurrently --save-dev
 npm install --save-dev nodemon
-npm install bcrypt jsonwebtoken
+npm install bcrypt jsonwebtoken\
+npm install bibtex-parse
+
 
 
 //Client

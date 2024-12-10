@@ -6,54 +6,56 @@ import { motion } from "framer-motion";
 import { BarChart2, ShoppingBag, Users, Zap } from "lucide-react";
 import StatCard from "../components/StatCard";
 import axios from "axios";
-import {
-  Tooltip,
-  ResponsiveContainer,
-} from "recharts";
+import { Tooltip, ResponsiveContainer } from "recharts";
 
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid } from "recharts";
 
 const quizData = [
-	{ quiz: "Quiz 1", score: 85 },
-	{ quiz: "Quiz 2", score: 70 },
-	{ quiz: "Quiz 3", score: 90 },
-	{ quiz: "Quiz 4", score: 65 },
+  { quiz: "Quiz 1", score: 85 },
+  { quiz: "Quiz 2", score: 70 },
+  { quiz: "Quiz 3", score: 90 },
+  { quiz: "Quiz 4", score: 65 },
 ];
 
 const targetScore = 65; // Example target score
 
 const QuizPerformanceChart = () => {
-	return (
-		<motion.div
-			className='bg-gray-800 bg-opacity-50 backdrop-blur-md shadow-lg rounded-xl p-6 border border-gray-700'
-			initial={{ opacity: 0, y: 20 }}
-			animate={{ opacity: 1, y: 0 }}
-			transition={{ delay: 0.3 }}
-		>
-			<h2 className='text-lg font-medium mb-4 text-gray-100'>Your Quiz Performance</h2>
-			<div className='h-80'>
-				<ResponsiveContainer width={"100%"} height={"100%"}>
-					<BarChart data={quizData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
-						<CartesianGrid strokeDasharray="3 3" />
-						<XAxis dataKey="quiz" />
-						<YAxis />
-						<Tooltip />
-						<Bar dataKey="score" fill="#3B82F6" />
-						<line
-							x1="0"
-							x2="100%"
-							y1={`${100 - targetScore}%`}
-							y2={`${100 - targetScore}%`}
-							stroke="red"
-							strokeWidth="2"
-							opacity="0.7"
-							strokeDasharray="5 5"
-						/>
-					</BarChart>
-				</ResponsiveContainer>
-			</div>
-		</motion.div>
-	);
+  return (
+    <motion.div
+      className="bg-gray-800 bg-opacity-50 backdrop-blur-md shadow-lg rounded-xl p-6 border border-gray-700"
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: 0.3 }}
+    >
+      <h2 className="text-lg font-medium mb-4 text-gray-100">
+        Your Quiz Performance
+      </h2>
+      <div className="h-80">
+        <ResponsiveContainer width={"100%"} height={"100%"}>
+          <BarChart
+            data={quizData}
+            margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+          >
+            <CartesianGrid strokeDasharray="3 3" />
+            <XAxis dataKey="quiz" />
+            <YAxis />
+            <Tooltip />
+            <Bar dataKey="score" fill="#3B82F6" />
+            <line
+              x1="0"
+              x2="100%"
+              y1={`${100 - targetScore}%`}
+              y2={`${100 - targetScore}%`}
+              stroke="red"
+              strokeWidth="2"
+              opacity="0.7"
+              strokeDasharray="5 5"
+            />
+          </BarChart>
+        </ResponsiveContainer>
+      </div>
+    </motion.div>
+  );
 };
 
 const CurrentLearningActivity = ({ course, progress }) => {
@@ -94,7 +96,6 @@ const CurrentLearningActivity = ({ course, progress }) => {
     </motion.div>
   );
 };
-
 
 const Dashboard = ({ course, progress }) => {
   return (
@@ -249,69 +250,61 @@ const OverviewPage = () => {
   return (
     <div className="flex h-screen bg-gray-900 text-gray-100 overflow-hidden">
       {/* Background Layers */}
-      <div className="fixed inset-0 z-0">
-        <div className="absolute inset-0 bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 opacity-80" />
-      </div>
 
       {/* Sidebar */}
       <Sidebar />
 
-      {/* Main Content */}
-      <div className="flex flex-col flex-1">
-        {/* Fixed Header */}
-        <div className="sticky top-0 z-10 bg-gray-800 shadow-lg">
-          <Header />
-        </div>
+
 
         {/* Dashboard Content */}
-        <main className="flex-1 overflow-y-auto p-4">
-          <div className="flex-1 overflow-auto relative z-10">
-            <main className="max-w-7xl mx-auto py-6 px-4 lg:px-8">
-              {/* STATS */}
-              <motion.div
-                className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4 mb-8"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 1 }}
-              >
-                <StatCard
-                  name="Total Courses Enrolled"
-                  icon={Zap}
-                  value={totalEnrolled}
-                  color="#6366F1"
-                />
-                <StatCard
-                  name="Total Lessons Completed"
-                  icon={Users}
-                  value={totalLessonsCompleted}
-                  color="#8B5CF6"
-                />
-                <StatCard
-                  name="Badges"
-                  icon={ShoppingBag}
-                  value="5"
-                  color="#EC4899"
-                />
-                <StatCard
-                  name="Total Learning Hours"
-                  icon={BarChart2}
-                  value={totalTimeSpent + " Hours"}
-                  color="#10B981"
-                />
-              </motion.div>
 
-              {/* CHARTS */}
+        <div className="flex-1 overflow-auto relative z-10">
+          <Header />
+          <main className="max-w-7xl mx-auto py-6 px-4 lg:px-8">
+            {/* STATS */}
+            <motion.div
+              className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4 mb-8"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 1 }}
+            >
+              <StatCard
+                name="Total Courses Enrolled"
+                icon={Zap}
+                value={totalEnrolled}
+                color="#6366F1"
+              />
+              <StatCard
+                name="Total Lessons Completed"
+                icon={Users}
+                value={totalLessonsCompleted}
+                color="#8B5CF6"
+              />
+              <StatCard
+                name="Badges"
+                icon={ShoppingBag}
+                value="5"
+                color="#EC4899"
+              />
+              <StatCard
+                name="Total Learning Hours"
+                icon={BarChart2}
+                value={totalTimeSpent + " Hours"}
+                color="#10B981"
+              />
+            </motion.div>
 
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                {/* <SalesOverviewChart/> */}
-                <QuizPerformanceChart />
-                <Dashboard course={course} progress={progress} />
-              </div>
-            </main>
-          </div>
-        </main>
+            {/* CHARTS */}
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              {/* <SalesOverviewChart/> */}
+              <QuizPerformanceChart />
+              <Dashboard course={course} progress={progress} />
+            </div>
+          </main>
+        </div>
       </div>
-    </div>
+
   );
 };
 
