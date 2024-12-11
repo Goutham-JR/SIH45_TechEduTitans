@@ -460,7 +460,7 @@ const ProfileInformation = ({ userId, user, onSave, onCancel, profilepic }) => {
       <div className="flex flex-col sm:flex-row items-center mb-6">
         <div className="w-20 h-20 sm:w-24 sm:h-24 mr-4 flex justify-center items-center">
           <img
-            src={ `http://localhost:5000/api/auth/photo/${userId}`}
+            src={`http://localhost:5000/api/auth/photo/${userId}`}
             alt="Profile"
             className="rounded-full w-full h-full object-cover cursor-pointer"
             onClick={handleModalToggle}
@@ -570,7 +570,7 @@ const SkillInput = () => {
   });
 
   const skillSchema = Joi.string()
-    .pattern(/^[A-Za-z][A-Za-z0-9\s!@#$%^&*(),.?":{}|<>_\-+]*$/) // Updated to allow plus (+) and hyphen (-) and other special characters
+    .pattern(/^[A-Za-z][A-Za-z0-9\s!@#$%^&(),.?":{}|<>_\-+]$/) // Updated to allow plus (+) and hyphen (-) and other special characters
     .required()
     .messages({
       "string.empty": "Skill cannot be empty.",
@@ -1106,6 +1106,8 @@ const DangerZone = () => {
     </motion.div>
   );
 };
+
+
 const ResumeUpload = () => {
   const [resume, setResume] = useState(null);
   const [uploadProgress, setUploadProgress] = useState(0);
@@ -1137,10 +1139,6 @@ const ResumeUpload = () => {
           headers: {
             "Content-Type": "multipart/form-data",
           },
-          onUploadProgress: (progressEvent) => {
-            const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
-            setUploadProgress(percentCompleted);
-          },
         }
       );
 
@@ -1153,7 +1151,7 @@ const ResumeUpload = () => {
   };
 
   return (
-    <div className="resume-upload-container p-6 bg-gray-800 rounded-lg shadow-md border border-gray-700">
+    <div className="resume-upload-container p-6 bg-gray-800 rounded-lg shadow-md border border-gray-700 mb-6">
       <h2 className="text-2xl font-bold text-white mb-4">Upload Your Resume</h2>
 
       <input
@@ -1176,15 +1174,7 @@ const ResumeUpload = () => {
       >
         Upload Resume
       </button>
-
-      {uploadProgress > 0 && (
-        <div className="mt-4 w-full bg-gray-600 rounded-full h-4">
-          <div
-            className="bg-indigo-600 h-4 rounded-full"
-            style={{ width: `${uploadProgress}%` }}
-          ></div>
-        </div>
-      )}
+      <br></br>
 
       <Snackbar
         open={snackbar.open}
@@ -1200,6 +1190,7 @@ const ResumeUpload = () => {
           {snackbar.message}
         </Alert>
       </Snackbar>
+      <br/>
     </div>
   );
 };

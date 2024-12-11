@@ -11,21 +11,18 @@ exports.saveAddress = async (req, res) => {
       return res.status(400).json({ error: 'All fields are required.' });
     }
 
-    // Find the user based on the session email
     const user = await Address.findOne({ email: sessionemail });
     if (!user) {
       return res.status(404).json({ error: 'User not found.' });
     }
     console.log(sessionemail);
 
-    // Update the user's address details
     user.line1 = line1;
     user.state = state;
     user.city = city;
     user.pincode = pincode;
     user.country = 'India'; // Default country is India
 
-    // Save the updated user data
     await user.save();
 
     res.status(200).json({ message: 'Address updated successfully.' });

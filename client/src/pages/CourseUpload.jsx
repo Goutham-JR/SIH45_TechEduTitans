@@ -16,53 +16,49 @@ const OverviewPage = () => {
   
   const extravalidationSchema = Joi.object({
     keywords: Joi.string()
-      .pattern(/^[a-zA-Z, ]+$/)
+      .pattern(/^[A-Za-z][^\u{1F600}-\u{1F64F}\u{1F300}-\u{1F5FF}]*$/u)
       .required()
       .messages({
-        "string.pattern.base": "Keywords must contain only alphabets and commas.",
+        "string.pattern.base": "Keywords must start with an alphabet.",
         "any.required": "Keywords are required.",
         "string.base": "Keywords cannot be empty.",
       }),
     
     courselanguage: Joi.string()
-      .pattern(/^[a-zA-Z]+$/)
+      .pattern(/^[A-Za-z][^\u{1F600}-\u{1F64F}\u{1F300}-\u{1F5FF}]*$/u)
       .required()
       .messages({
-        "string.pattern.base": "Course language must contain only alphabets.",
+        "string.pattern.base": "Course language must start with an alphabet.",
         "any.required": "Course language is required.",
         "string.base": "Course language cannot be empty.",
       }),
-  
     level: Joi.string()
-      .valid("Beginner", "Intermediate", "Advanced") // Ensure only these values are valid
-      .trim()  // Remove any leading/trailing spaces
+      .valid("Beginner", "Intermediate", "Advanced") 
+      .trim() 
       .required()
       .messages({
         "any.only": "Level must be selected from the available options.",
         "any.required": "Level is required.",
-        "string.base": "Level must be a string."
+        "string.base": "Level must be a string.",
       }),
   });
   
-  // Function to validate the course data
+  
   const validatefinal = ({ keywords, courselanguage, level }) => {
     const { error } = extravalidationSchema.validate({ keywords, courselanguage, level }, { abortEarly: false });
     if (error) {
-      // Return all error messages concatenated if multiple errors exist
       return error.details[0].message;
     }
-    return null; // Return null if validation passes
+    return null; 
   };
   
   const finalizeCourses = async (keywords, courselanguage, level) => {
-    // Validate the course data
     const errorMessage = validatefinal({ keywords, courselanguage, level });
   
     if (errorMessage) {
-      // If validation fails, show the error message in the Snackbar
       setErrorMessage(errorMessage);
       setOpenSnackbar(true);
-      return; // Stop further execution if validation fails
+      return; 
     }
     try {
       const response = await fetch(
@@ -404,55 +400,53 @@ const validateCourses = (courses) => {
 
   const quizValidationSchema = Joi.array().items(
     Joi.object({
-      weeks: Joi.array().items(
-        Joi.object({
-          title: Joi.string().required().messages({
-            "string.base": "Week title must be a string.",
-            "any.required": "Week title is required.",
+      quiz: Joi.object({
+        questions: Joi.array()
+          .items(
+            Joi.object({
+              question: Joi.string()
+                .regex(/^[A-Za-z][^\u{1F600}-\u{1F64F}\u{1F300}-\u{1F5FF}]*$/u)
+                .required()
+                .messages({
+                  "string.pattern.base": "Each question must start with a letter.",
+                  "any.required": "Each question is required.",
+                }),
+              choices: Joi.array()
+                .length(4)
+                .items(
+                  Joi.string()
+                    .regex(/^[A-Za-z][^\u{1F600}-\u{1F64F}\u{1F300}-\u{1F5FF}]*$/u)
+                    .required()
+                )
+                .required()
+                .messages({
+                  "array.length": "Each question must have exactly 4 choices.",
+                  "any.required": "Choices are required for each question.",
+                  "string.pattern.base": "Each choice must start with a letter, allow special characters, and not contain emojis.",
+                }),
+              correctAnswer: Joi.string()
+                .required()
+                .custom((value, helpers) => {
+                  const question = helpers.state.ancestors[0];
+                  if (!question.choices.includes(value)) {
+                    return helpers.error("any.invalid", { value });
+                  }
+                  return value;
+                })
+                .messages({
+                  "any.invalid": "Correct answer must match one of the choices.",
+                  "any.required": "Correct answer is required.",
+                }),
+            })
+          )
+          .min(5)
+          .messages({
+            "array.min": "There must be at least 5 questions in the quiz.",
           }),
-          quiz: Joi.object({
-            questions: Joi.array().items(
-              Joi.object({
-                question: Joi.string()
-                  .regex(/^[a-zA-Z].*$/)
-                  .required()
-                  .messages({
-                    "string.pattern.base": "Each question must start with a letter.",
-                    "any.required": "Each question is required.",
-                  }),
-                choices: Joi.array()
-                  .length(4)
-                  .items(Joi.string().required())
-                  .required()
-                  .messages({
-                    "array.length": "Each question must have exactly 4 choices.",
-                    "any.required": "Choices are required for each question.",
-                  }),
-                correctAnswer: Joi.string()
-                  .required()
-                  .custom((value, helpers) => {
-                    const question = helpers.state.ancestors[0];
-                    if (!question.choices.includes(value)) {
-                      return helpers.error("any.invalid", { value });
-                    }
-                    return value;
-                  })
-                  .messages({
-                    "any.invalid": "Correct answer must match one of the choices.",
-                    "any.required": "Correct answer is required.",
-                  }),
-              })
-            )
-            .min(5)
-            .messages({
-              "array.min": "There must be at least 5 questions in the quiz.",
-            }),
-          }).optional(),
-        })
-      ).required(),
+      }).required(),
     })
   );
-
+  
   const validateQuizData = (courses) => {
     const { error } = quizValidationSchema.validate(courses, { abortEarly: false });
     if (error) {
@@ -535,26 +529,29 @@ const validateCourses = (courses) => {
     let errorMessage = "";
   
     // Check if there are at least 5 questions
-    if (quizData.questions.length < 2) {
-      errorMessage = "The quiz must have at least 2 questions.";
+    if (quizData.questions.length < 5) {
+      errorMessage = "The quiz must have at least 5 questions.";
       setErrorMessage(errorMessage);
       setOpenSnackbar(true);
       return;
     }
-  
+    
     // Validate each question
     for (let i = 0; i < quizData.questions.length; i++) {
       const question = quizData.questions[i];
       const questionIndex = i + 1; // 1-based index for user-friendly error messages
-  
+    
       // Validate the question text
-      if (!question.question || !/^[a-zA-Z].*$/.test(question.question)) {
-        errorMessage = `Question ${questionIndex}: Question text must start with a letter.`;
+      if (
+        !question.question || 
+        !/^[A-Za-z][^\u{1F600}-\u{1F64F}\u{1F300}-\u{1F5FF}]*$/u.test(question.question)
+      ) {
+        errorMessage = `Question ${questionIndex}: Question text must start with a letter, allow special characters, and not contain emojis.`;
         setErrorMessage(errorMessage);
         setOpenSnackbar(true);
         return;
       }
-  
+    
       // Validate the choices (must be exactly 4)
       if (!Array.isArray(question.choices) || question.choices.length !== 4) {
         errorMessage = `Question ${questionIndex}: Must have exactly 4 choices.`;
@@ -562,17 +559,20 @@ const validateCourses = (courses) => {
         setOpenSnackbar(true);
         return;
       }
-  
-      // Validate that each choice is a non-empty string
+    
+      // Validate that each choice starts with a letter, allows special characters, and doesn't contain emojis
       for (let j = 0; j < question.choices.length; j++) {
-        if (!question.choices[j] || typeof question.choices[j] !== 'string') {
-          errorMessage = `Question ${questionIndex}: Choices must be non-empty strings.`;
+        if (
+          !question.choices[j] || 
+          !/^[A-Za-z][^\u{1F600}-\u{1F64F}\u{1F300}-\u{1F5FF}]*$/u.test(question.choices[j])
+        ) {
+          errorMessage = `Question ${questionIndex}: Choice ${j + 1} must start with a letter, allow special characters, and not contain emojis.`;
           setErrorMessage(errorMessage);
           setOpenSnackbar(true);
           return;
         }
       }
-  
+    
       // Validate the correct answer
       if (!question.correctAnswer || !question.choices.includes(question.correctAnswer)) {
         errorMessage = `Question ${questionIndex}: Correct answer must match one of the choices.`;
@@ -581,7 +581,7 @@ const validateCourses = (courses) => {
         return;
       }
     }
-  
+    
     // Proceed with the quiz submission logic (send data to the backend)
     try {
       const formData = new FormData();
@@ -747,29 +747,33 @@ const validateCourses = (courses) => {
     }
     
 
-    // Manual validation starts here
 
     // Week title validation (must not be empty and only contain letters and spaces)
-    if (!weektitle || !/^[a-zA-Z\s]+$/.test(weektitle)) {
-      setErrorMessage("Week title is required and must contain only alphabets.");
+    if (!weektitle || !/^[A-Za-z][^\u{1F600}-\u{1F64F}\u{1F300}-\u{1F5FF}]*$/u.test(weektitle)) {
+      setErrorMessage(
+        "Week title is required, must start with an alphabet, and must not contain emojis."
+      );
       setOpenSnackbar(true);
       return;
     }
-
-    // Video title validation (must not be empty and only contain letters and spaces)
-    if (!title || !/^[a-zA-Z\s]*$/.test(title)) {
-      setErrorMessage("Video title is required and must contain only alphabets.");
+    
+    if (!title || !/^[A-Za-z][^\u{1F600}-\u{1F64F}\u{1F300}-\u{1F5FF}]*$/u.test(title)) {
+      setErrorMessage(
+        "Video title is required, must start with an alphabet, and must not contain emojis."
+      );
       setOpenSnackbar(true);
       return;
     }
-
-    // Description validation (must not be empty and only contain letters and spaces)
-    if (!description || !/^[a-zA-Z\s]*$/.test(description)) {
-      setErrorMessage("Description is required and must contain only alphabets.");
+    
+    // Description validation (must start with an alphabet, allow special characters, no emojis)
+    if (!description || !/^[A-Za-z][^\u{1F600}-\u{1F64F}\u{1F300}-\u{1F5FF}]*$/u.test(description)) {
+      setErrorMessage(
+        "Description is required, must start with an alphabet, and must not contain emojis."
+      );
       setOpenSnackbar(true);
       return;
     }
-
+    
     // Thumbnail validation (must be an image file)
     if (!thumbnail || !/^image\/.*/.test(thumbnail.type)) {
       setErrorMessage("Please upload a valid image file for the thumbnail.");
@@ -987,21 +991,25 @@ const validateCourses = (courses) => {
 
   const validationSchema = Joi.object({
     title: Joi.string()
-      .regex(/^[A-Za-z]/)
+      .regex(/^[A-Za-z][^\u{1F600}-\u{1F64F}\u{1F300}-\u{1F5FF}]*$/u)
       .required()
       .messages({
         "string.pattern.base": "Course title must start with an alphabet.",
         "string.empty": "Course title is required.",
       }),
     description: Joi.string()
-      .regex(/^[A-Za-z\s]+$/)
+      .regex(/^[A-Za-z][^\u{1F600}-\u{1F64F}\u{1F300}-\u{1F5FF}]*$/u)
       .required()
       .messages({
-        "string.pattern.base": "Description must only contain alphabets.",
+        "string.pattern.base": "Description must start with an alphabet.",
         "string.empty": "Description is required.",
       }),
     learnings: Joi.array()
-      .items(Joi.string().regex(/^[A-Za-z]/).required())
+      .items(
+        Joi.string()
+          .regex(/^[A-Za-z][^\u{1F600}-\u{1F64F}\u{1F300}-\u{1F5FF}]*$/u)
+          .required()
+      )
       .min(2)
       .required()
       .messages({
@@ -1009,7 +1017,11 @@ const validateCourses = (courses) => {
         "string.pattern.base": "Each learning must start with an alphabet.",
       }),
     requirements: Joi.array()
-      .items(Joi.string().regex(/^[A-Za-z]/).required())
+      .items(
+        Joi.string()
+          .regex(/^[A-Za-z][^\u{1F600}-\u{1F64F}\u{1F300}-\u{1F5FF}]*$/u)
+          .required()
+      )
       .min(2)
       .required()
       .messages({
@@ -1017,7 +1029,7 @@ const validateCourses = (courses) => {
         "string.pattern.base": "Each requirement must start with an alphabet.",
       }),
   });
-
+  
   const validateCourseDetails = (course) => {
     const { error } = validationSchema.validate(course, { abortEarly: false });
     if (error) {

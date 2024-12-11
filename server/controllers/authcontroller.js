@@ -6,7 +6,7 @@ const nodemailer = require("nodemailer");
 require('dotenv').config();
 
 
-
+let sessionemail = null;
 // Joi schemas for validation
 
 // Joi schema for SignUp validation
@@ -44,7 +44,7 @@ const signUpSchema = Joi.object({
       'string.empty': 'Phone Number is required.',
       'string.pattern.base': 'Phone Number must be exactly 10 digits.',
     }),
-}).with('password', 'confirmPassword'); // This ensures both password and confirmPassword are used together
+}).with('password', 'confirmPassword'); 
 
 
 const signInSchema = Joi.object({
@@ -63,31 +63,43 @@ const signInSchema = Joi.object({
     }),
 });
 
-// Sign Up Function
 exports.signUp = async (req, res) => {
   try {
     console.log("working");
-    // Validate input
     const { error } = signUpSchema.validate(req.body);
     if (error) return res.status(400).json({ error: error.details[0].message });
     console.log('Request Body:', req.body);
 
     const { name, email, password, confirmPassword, phoneNumber } = req.body;
 
-    // Check if the user already exists
     const userExists = await User.findOne({ email });
     if (userExists) return res.status(400).json({ error: 'User already exists!' });
 
-    // Generate a salt
-    const saltRounds = 10; // Salt rounds, you can adjust this as needed
+    sessionemail = email;
+
+    const saltRounds = 10; 
     const salt = await bcrypt.genSalt(saltRounds);
 
-    // Hash the password with the generated salt
     const hashedPassword = await bcrypt.hash(password, salt);
 
-    // Save the new user
     const newUser = new User({ name, email, password: hashedPassword, phoneNumber });
+    newUser.resetOtp = undefined;
+    newUser.resetOtpExpires = undefined;
     await newUser.save();
+
+    const otpGenerated = Math.floor(1000 + Math.random() * 9000).toString();
+      const otpExpires = Date.now() + 10 * 60 * 1000; 
+      newUser.resetOtp = otpGenerated;
+      newUser.resetOtpExpires = otpExpires;
+      console.log(otpGenerated);
+      await newUser.save();
+  
+      await transporter.sendMail({
+        from: "teachedu2024@gmail.com",
+        to: email,
+        subject: "Password Reset OTP",
+        text: `Hello,\n\nYour OTP for resetting your password is: ${otpGenerated}\n\nThis OTP is valid for 10 minutes.`,
+      });
 
     res.status(201).json({ message: 'User registered successfully!' });
   } catch (err) {
@@ -96,24 +108,19 @@ exports.signUp = async (req, res) => {
   }
 };
 
-// Sign In Function
 exports.signIn = async (req, res) => {
   try {
-    // Validate input
     const { error } = signInSchema.validate(req.body);
     if (error) return res.status(400).json({ error: error.details[0].message });
 
     const { email, password } = req.body;
 
-    // Check if the user exists
     const user = await User.findOne({ email });
     if (!user) return res.status(404).json({ error: 'User does not exist!' });
 
-    // Check if the password matches
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) return res.status(400).json({ error: 'Invalid password!' });
 
-    // Generate a JWT
     if (!process.env.JWT_SECRET) {
       throw new Error("Missing JWT_SECRET environment variable");
     }
@@ -138,16 +145,14 @@ exports.signIn = async (req, res) => {
 };
 
 exports.logout = (req, res) => {
-  res.clearCookie('token'); // Clear the token cookie
+  res.clearCookie('token'); 
   res.status(200).json({ message: 'Logged out successfully!' });
 };
 
-// Define validation schema for the email input
 const emailSchema = Joi.object({
   email: Joi.string().email().required(),
 });
 
-// Configure nodemailer for SMTP
 const transporter = nodemailer.createTransport({
   host: 'smtp.gmail.com',
   port: 465,
@@ -163,12 +168,10 @@ exports.forgotpassword = async (req, res) => {
   try {
     const { email, otp, password } = req.body;
 
-    // Email Validation Schema
     const emailSchema = Joi.string().email({ tlds: { allow: false } }).required();
     const { error: emailError } = emailSchema.validate(email);
     if (emailError) return res.status(400).json({ error: "Invalid email address." });
 
-    // Password Validation Schema
     const passwordSchema = Joi.string()
       .min(8)
       .pattern(new RegExp("^(?=.*[!@#$%^&*])"))
@@ -182,22 +185,20 @@ exports.forgotpassword = async (req, res) => {
       }
     }
 
-    // Find user
     const user = await User.findOne({ email });
     if (!user) return res.status(404).json({ error: "User not found." });
 
-    // If OTP is provided, verify OTP
     if (otp) {
+      console.log(otp);
       if (user.resetOtp !== otp || Date.now() > user.resetOtpExpires) {
         return res.status(400).json({ error: "Invalid OTP." });
       }
 
-      // Hash the new password
-      const saltRounds = 10; // Adjust as needed
+      
+      const saltRounds = 10; 
       const salt = await bcrypt.genSalt(saltRounds);
       const hashedPassword = await bcrypt.hash(password, salt);
 
-      // Update user's password and clear OTP fields
       user.password = hashedPassword;
       user.resetOtp = undefined;
       user.resetOtpExpires = undefined;
@@ -206,16 +207,12 @@ exports.forgotpassword = async (req, res) => {
       return res.status(200).json({ message: "Password reset successfully." });
     }
 
-    // Generate OTP for the first step
     const otpGenerated = Math.floor(1000 + Math.random() * 9000).toString();
-    const otpExpires = Date.now() + 10 * 60 * 1000; // OTP valid for 10 minutes
-
-    // Update user with OTP and expiration
+    const otpExpires = Date.now() + 10 * 60 * 1000; 
     user.resetOtp = otpGenerated;
     user.resetOtpExpires = otpExpires;
     await user.save();
 
-    // Send OTP via email
     await transporter.sendMail({
       from: "teachedu2024@gmail.com",
       to: email,
@@ -229,3 +226,45 @@ exports.forgotpassword = async (req, res) => {
     res.status(500).json({ error: "An error occurred while processing your request." });
   }
 };
+
+
+exports.otp = async (req, res) => {
+    try {
+      const { otp } = req.body;
+      const user = await User.findOne({ email: sessionemail });
+      if (!user) return res.status(404).json({ error: "User not found." });
+  
+      if (otp) {
+        console.log(otp);
+        if (user.resetOtp !== otp || Date.now() > user.resetOtpExpires) {
+          return res.status(400).json({ error: "Invalid OTP." });
+        }
+  
+        
+        user.resetOtp = undefined;
+        user.resetOtpExpires = undefined;
+        await user.save();
+  
+        return res.status(200).json({ message: "Password reset successfully." });
+      }
+  
+      const otpGenerated = Math.floor(1000 + Math.random() * 9000).toString();
+      const otpExpires = Date.now() + 10 * 60 * 1000; 
+      user.resetOtp = otpGenerated;
+      user.resetOtpExpires = otpExpires;
+      await user.save();
+  
+      await transporter.sendMail({
+        from: "teachedu2024@gmail.com",
+        to: email,
+        subject: "Password Reset OTP",
+        text: `Hello,\n\nYour OTP for resetting your password is: ${otpGenerated}\n\nThis OTP is valid for 10 minutes.`,
+      });
+  
+      return res.status(200).json({ message: "OTP sent to your email." });
+    } catch (err) {
+      console.error(err);
+      res.status(500).json({ error: "An error occurred while processing your request." });
+    }
+  };
+  

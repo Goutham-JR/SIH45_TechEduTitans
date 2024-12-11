@@ -33,6 +33,7 @@ import CourseVideoPage from './pages/VideoPage';
 import InstructorProfile from './components/InstructorProfile';
 import Quizmain from './pages/Quiz';
 import Recommendation from './pages/Recommendation';
+import Otp from './components/otp';
 
 
 function App() {
@@ -73,7 +74,7 @@ function App() {
         <Route path="/InstructorProfile" element={< InstructorProfile/>} />
         <Route path="/quizmain" element={< Quizmain/>} />
         <Route path="/recommendation" element={< Recommendation/>} />
-
+        <Route path="/otp" element={< Otp/>} />
       </Routes>
     </BrowserRouter>
   );

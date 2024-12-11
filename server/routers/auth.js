@@ -6,6 +6,7 @@ const {
   signIn,
   logout,
   forgotpassword,
+  otp,
 } = require("../controllers/authcontroller");
 
 const {
@@ -22,6 +23,8 @@ router.post("/signin", signIn);
 router.post("/logout", logout);
 
 router.post("/forgotpassword", forgotpassword);
+
+router.post("/otp", otp);
 
 router.post("/upload", uploadProfilePhoto);
 

@@ -146,6 +146,9 @@ const Header = () => {
   const handleOpenSignUp = () => setOpenSignUp(true);
   const handleCloseSignUp = () => setOpenSignUp(false);
 
+  const handleOpenForgotPassword = () => setOpenForgotPassword(true);
+  const handleCloseForgotPassword = () => setOpenForgotPassword(false);
+
   const [isLogged, setIsLogged] = useState(false);
 
   //CHECK USER ALREADY LOGIN
@@ -792,6 +795,7 @@ const Header = () => {
           <Typography
             variant="body2"
             sx={{ mt: 2, textAlign: "center", cursor: "pointer" }}
+            onClick={() => navigate('/ForgotPassword')}
           >
             Forgot Password? |{" "}
             <span
@@ -896,6 +900,7 @@ const Header = () => {
               fullWidth
               type="submit"
               variant="contained"
+              onClick={() => navigate('/otp')}
               sx={{
                 mt: 2,
                 backgroundColor: "#478eff",
@@ -916,6 +921,7 @@ const Header = () => {
               onClick={() => {
                 handleCloseSignUp();
                 handleOpenSignIn();
+               
               }}
             >
               Sign In

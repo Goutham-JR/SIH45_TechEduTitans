@@ -12,7 +12,7 @@ import {
 } from "@mui/material";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import Joi from "joi";
-import axios from "axios"; // Import axios for API requests
+import axios from "axios"; 
 
 const ForgotPassword = () => {
   const navigate = useNavigate();
@@ -42,10 +42,9 @@ const ForgotPassword = () => {
       setSnackbarOpen(true);
     } else {
       try {
-        // Make API call to backend to send OTP to the user's email
         const response = await axios.post("http://localhost:5000/api/auth/forgotpassword", { email });
         if (response.status === 200) {
-          setStep(2); // Move to OTP verification step
+          setStep(2); 
           setErrorMessage("");
         }
       } catch (err) {
@@ -67,7 +66,6 @@ const ForgotPassword = () => {
       setSnackbarOpen(true);
     } else {
       try {
-        // Send OTP and password to the backend
         const response = await axios.post("http://localhost:5000/api/auth/forgotpassword", {
           email,
           otp,

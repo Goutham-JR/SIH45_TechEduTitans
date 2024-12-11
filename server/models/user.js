@@ -18,6 +18,9 @@ const userSchema = new mongoose.Schema(
     country: { type: String, default: "India" },
     role: { type: String, default: "Student" },
     status: { type: String, default: "Active" },
+    resetOtp: {type: String, required: false},
+    resetOtpExpires: {type: String, required: false},
+
   },
   {
     timestamps: true,
