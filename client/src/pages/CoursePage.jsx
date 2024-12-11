@@ -16,7 +16,7 @@ const CourseCard = () => {
   const [isEnrolled, setIsEnrolled] = useState(null); // null indicates the status hasn't been checked yet
   const [loading, setLoading] = useState(true); // For loading state
   const [showCelebration, setShowCelebration] = useState(false); // Celebration popup state
-  const [enrollmentCount, setEnrollmentCount] = useState(0); 
+  const [enrollmentCount, setEnrollmentCount] = useState(0);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -41,7 +41,6 @@ const CourseCard = () => {
 
     fetchData();
   }, [query]);
-
 
   useEffect(() => {
     const fetchEnrollmentCount = async () => {
@@ -269,7 +268,6 @@ const CourseCard = () => {
 
               <p>📂 {courseresource?.totalResources} downloadable resources</p>
               <p>🏆 Certificate of completion</p>
-              <p>📜 63 articles</p>
             </div>
           </div>
         </div>
@@ -309,7 +307,8 @@ const CourseCard = () => {
                 {course?.level}
               </p>
               <p>
-                <span className="font-bold">👥 Student Enrolled:</span> {enrollmentCount}
+                <span className="font-bold">👥 Student Enrolled:</span>{" "}
+                {enrollmentCount}
               </p>
               <p>
                 <span className="font-bold">🌍 Language:</span>{" "}
@@ -367,9 +366,9 @@ const CourseCard = () => {
             <Confetti
               width={window.innerWidth}
               height={window.innerHeight}
-              numberOfPieces={500} // Number of pieces for continuous shower
-              gravity={0.2} // Slower fall for a smooth effect
-              wind={0.02} // Gentle horizontal motion
+              numberOfPieces={200} // Fewer pieces for a slower effect
+              gravity={0.05} // Slower fall
+              wind={0.01} // Gentle horizontal motion
               colors={[
                 "#FFC700",
                 "#FF5733",
@@ -377,7 +376,7 @@ const CourseCard = () => {
                 "#8E44AD",
                 "#28B463",
                 "#FFB6C1",
-              ]} // Vibrant colors
+              ]}
               recycle={true} // Continuous confetti shower
             />
           </div>

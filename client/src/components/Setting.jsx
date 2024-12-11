@@ -1106,7 +1106,103 @@ const DangerZone = () => {
     </motion.div>
   );
 };
+const ResumeUpload = () => {
+  const [resume, setResume] = useState(null);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [snackbar, setSnackbar] = useState({ open: false, message: "", severity: "" });
 
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (file && file.type === "application/pdf" && file.size <= 5 * 1024 * 1024) {
+      setResume(file);
+    } else {
+      setSnackbar({ open: true, message: "Only PDF files up to 5MB are allowed.", severity: "error" });
+    }
+  };
+
+  const handleFileUpload = async () => {
+    if (!resume) {
+      setSnackbar({ open: true, message: "Please select a resume to upload.", severity: "warning" });
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append("resume", resume);
+
+    try {
+      const response = await axios.post(
+        "http://localhost:5000/api/upload/resume",
+        formData,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+          onUploadProgress: (progressEvent) => {
+            const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+            setUploadProgress(percentCompleted);
+          },
+        }
+      );
+
+      setSnackbar({ open: true, message: response.data.message, severity: "success" });
+      setResume(null);
+      setUploadProgress(0);
+    } catch (error) {
+      setSnackbar({ open: true, message: "Upload failed. Please try again.", severity: "error" });
+    }
+  };
+
+  return (
+    <div className="resume-upload-container p-6 bg-gray-800 rounded-lg shadow-md border border-gray-700">
+      <h2 className="text-2xl font-bold text-white mb-4">Upload Your Resume</h2>
+
+      <input
+        type="file"
+        accept="application/pdf"
+        onChange={handleFileChange}
+        className="mb-4 p-2 border rounded-md bg-gray-700 text-white w-full"
+      />
+
+      {resume && (
+        <div className="mb-4">
+          <p className="text-gray-300">Selected File: {resume.name}</p>
+          <p className="text-gray-300">Size: {(resume.size / 1024 / 1024).toFixed(2)} MB</p>
+        </div>
+      )}
+
+      <button
+        onClick={handleFileUpload}
+        className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded transition duration-200"
+      >
+        Upload Resume
+      </button>
+
+      {uploadProgress > 0 && (
+        <div className="mt-4 w-full bg-gray-600 rounded-full h-4">
+          <div
+            className="bg-indigo-600 h-4 rounded-full"
+            style={{ width: `${uploadProgress}%` }}
+          ></div>
+        </div>
+      )}
+
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={3000}
+        onClose={() => setSnackbar({ open: false, message: "", severity: "" })}
+        anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+      >
+        <Alert
+          onClose={() => setSnackbar({ open: false, message: "", severity: "" })}
+          severity={snackbar.severity}
+          variant="filled"
+        >
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
+    </div>
+  );
+};
 const SettingsPage = () => {
   const [activeSection, setActiveSection] = useState("Profile");
 
@@ -1196,6 +1292,7 @@ const SettingsPage = () => {
             />
           </SettingSection>
           <SkillInput />
+          <ResumeUpload/>
           <Address />
           <DangerZone />
         </div>

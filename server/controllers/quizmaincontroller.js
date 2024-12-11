@@ -1,22 +1,33 @@
-const Quiz = require('../models/quizsample');
+const Course = require('../models/course');
 const mongoose = require("mongoose");
 
-exports.getQuestionsByQuizId = async (req, res) => {
-    try {
-      const quizId = '6752ac3bc09817e66d22aabb'; // Get quiz ID from route params
-      // Find the quiz by its ID
-      const quiz = await Quiz.findById({_id: quizId});
-      console.log(quiz);
-  
-      // If quiz not found, return a 404 error
-      if (!quiz) {
-        return res.status(404).json({ message: 'Quiz not found' });
-      }
-  
-      // Send the questions as the response
-      res.status(200).json(quiz.questions);
-    } catch (error) {
-      console.error('Error fetching questions:', error);
-      res.status(500).json({ message: 'Failed to load questions. Please try again later.' });
+exports.getQuizzesByCourseId = async (req, res) => {
+  try {
+    // Extract courseId from request params
+    const { courseId } = req.params;
+
+    // Find the course by its ID
+    const course = await Course.findById(courseId);
+
+    // Check if the course exists
+    if (!course) {
+      return res.status(404).json({ message: 'Course not found' });
     }
-  };
+
+    // Extract quizzes from all weeks
+    const quizzes = course.weeks.map(week => ({
+      weekNumber: week.weekNumber,
+      weekTitle: week.weekTitle,
+      quiz: week.quiz.questions.map(question => ({
+        question: question.question,
+        choices: question.choices,
+        correctAnswer: question.correctAnswer
+      }))
+    }));
+
+    res.status(200).json(quizzes);
+  } catch (error) {
+    console.error('Error fetching quizzes:', error);
+    res.status(500).json({ message: 'Failed to load quizzes. Please try again later.' });
+  }
+};

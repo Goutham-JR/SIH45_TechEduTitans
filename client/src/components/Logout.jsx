@@ -12,10 +12,10 @@ const Logout = () => {
         await axios.post('http://localhost:5000/api/auth/logout', {}, { withCredentials: true });
 
         // Redirect to the login page
-        navigate('/signin');
+        navigate('/');
       } catch (err) {
         console.error('Logout failed:', err.message);
-        navigate('/signin'); // Redirect even if logout fails
+        navigate('/'); // Redirect even if logout fails
       }
     };
 

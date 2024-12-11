@@ -11,6 +11,8 @@ const {
 const {
   uploadProfilePhoto,
   getProfilePhoto,
+  uploadResume,
+  getResume,
 } = require("../controllers/profilecontroller");
 
 router.post("/signup", signUp);
@@ -24,5 +26,9 @@ router.post("/forgotpassword", forgotpassword);
 router.post("/upload", uploadProfilePhoto);
 
 router.get("/photo/:id", getProfilePhoto);
+
+router.post("/uploadresume", uploadResume);
+
+router.get("/resume/:id", getResume);
 
 module.exports = router;

@@ -198,16 +198,17 @@ const Header = () => {
 
   const handleLoginSubmit = async (e) => {
     e.preventDefault();
-
+  
     const { error: validationError } = signInSchema.validate(loginformData);
     if (validationError) {
       setSnackbar({
         open: true,
-        message: "" + validationError.details[0].message,
+        message: validationError.details[0].message,
         severity: "error",
       });
       return;
     }
+  
     try {
       // Call the backend API to check the credentials
       const response = await axios.post(
@@ -217,24 +218,54 @@ const Header = () => {
           withCredentials: true, // Include cookies with the request
         }
       );
+      
       console.log(response);
-
+  
       setUser(null);
       fetchUser();
-
-      // Redirect on successful login
+  
+      // Check the user's ID after successful login
+      const authResponse = await axios.get(
+        "http://localhost:5000/api/protected/check-auth",
+        {
+          withCredentials: true, // Ensure cookies are sent
+        }
+      );
+  
+      const userId = authResponse.data?.id;
+  
+      // Fetch user details based on ID
+      const userDetailsResponse = await axios.get(
+        `http://localhost:5000/api/protected/fetchuserdetail?id=${userId}`,
+        {
+          withCredentials: true, // Ensure cookies are sent
+        }
+      );
+  
+      const userRole = userDetailsResponse.data?.user.role;
+    
+  
+      console.log(userRole)
       setSnackbar({
         open: true,
         message: "Login successful! Redirecting...",
         severity: "success",
       });
-      setTimeout(() => navigate("/dashboard"), 1500);
+  
+      setTimeout(() => {
+        if (userRole === "Instructor") {
+          navigate("/instructor-dashboard");
+        } else {
+          navigate("/dashboard");
+        }
+      }, 1500);
     } catch (err) {
       const errorMessage =
         err.response?.data?.error || "Something went wrong. Please try again.";
       setSnackbar({ open: true, message: errorMessage, severity: "error" });
     }
   };
+
 
   //SIGNUP
 
@@ -666,7 +697,7 @@ const Header = () => {
                       <ListItemText primary="Help and Support" />
                     </ListItem>
                     <ListItem button="true">
-                      <ListItemText primary="Logout" />
+                      <ListItemText primary="Logout" onClick={()=> navigate('/logout')}/>
                     </ListItem>
                   </List>
                 </Popover>
@@ -860,6 +891,7 @@ const Header = () => {
               placeholder="Enter your phone number"
               style={{ backgroundColor: "#fff", borderRadius: "5px" }}
             />
+            
             <Button
               fullWidth
               type="submit"

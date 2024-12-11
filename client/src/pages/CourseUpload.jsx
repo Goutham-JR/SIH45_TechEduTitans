@@ -16,14 +16,14 @@ const OverviewPage = () => {
   
   const extravalidationSchema = Joi.object({
     keywords: Joi.string()
-      .pattern(/^[a-zA-Z]+$/)
+      .pattern(/^[a-zA-Z, ]+$/)
       .required()
       .messages({
-        "string.pattern.base": "Keywords must contain only alphabets.",
+        "string.pattern.base": "Keywords must contain only alphabets and commas.",
         "any.required": "Keywords are required.",
         "string.base": "Keywords cannot be empty.",
-
       }),
+    
     courselanguage: Joi.string()
       .pattern(/^[a-zA-Z]+$/)
       .required()
@@ -32,7 +32,8 @@ const OverviewPage = () => {
         "any.required": "Course language is required.",
         "string.base": "Course language cannot be empty.",
       }),
-      level: Joi.string()
+  
+    level: Joi.string()
       .valid("Beginner", "Intermediate", "Advanced") // Ensure only these values are valid
       .trim()  // Remove any leading/trailing spaces
       .required()

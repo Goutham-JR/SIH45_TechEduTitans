@@ -2,7 +2,7 @@ import React from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import AdminDashboard from './pages/AdminDashboard';
 import Course from './pages/Course';
-import Home from './pages/Home';
+import Home from './pages/LandingPage';
 import Profile from './pages/Profile';
 import PaymentsPage from './pages/Payments';
 import CourseUpload from './pages/UploadCourse';
@@ -41,7 +41,7 @@ function App() {
     <BrowserRouter>
       <Routes>
         {/* Root path "/" will render the Home page */}
-        <Route path="/" element={<Testing />} />
+        <Route path="/" element={<Home />} />
         {/* Additional routes */}
         <Route path="/home" element={<Home />} />
         <Route path="/profile" element={<Profile />} />

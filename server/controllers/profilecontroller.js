@@ -50,7 +50,6 @@ exports.uploadProfilePhoto = async (req, res) => {
     const { userId } = req.fields;
     const profilePhoto = req.files.profilePhoto;
 
-    console.log(userId, profilePhoto);
 
     if (!userId || !profilePhoto) {
       return res.status(400).json({
@@ -132,6 +131,94 @@ exports.getProfilePhoto = async (req, res) => {
     });
   } catch (error) {
     console.error("Error fetching profile photo:", error);
+    res.status(500).json({ error: "Server error" });
+  }
+};
+
+
+exports.uploadResume = async (req, res) => {
+  try {
+    const { userId } = req.fields;
+    const resumeFile = req.files.resume;
+
+    if (!userId || !resumeFile) {
+      return res.status(400).json({
+        error: "User ID and resume file are required",
+      });
+    }
+
+    await mongoose.connect("mongodb://localhost:27017/ELearning", {
+      useNewUrlParser: true,
+      useUnifiedTopology: true,
+    });
+
+    const conn = mongoose.connection;
+    const bucket = new GridFSBucket(conn.db, { bucketName });
+
+    // Upload resume file
+    const resumeFileId = await uploadFile(
+      resumeFile.path,
+      bucket,
+      resumeFile.mimetype || "application/pdf"
+    );
+
+    // Find or create a profile
+    let profile = await Profile.findById(userId);
+    if (!profile) {
+      res.status(404).json({ error: "Profile not found" });
+    } else {
+      profile.resume = resumeFileId;
+    }
+
+    await profile.save();
+
+    res.status(200).json({
+      message: "Resume uploaded successfully!",
+      resumeFileId,
+    });
+  } catch (err) {
+    console.error("Error uploading resume:", err);
+    res.status(500).json({ error: "Server error" });
+  }
+};
+
+// Serve Resume
+exports.getResume = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    if (!ObjectId.isValid(id)) {
+      return res.status(400).json({ error: "Invalid Profile ID" });
+    }
+
+    const profile = await Profile.findById(id).populate("resume");
+
+    if (!profile || !profile.resume) {
+      return res.status(404).json({ error: "Profile or resume not found" });
+    }
+
+    const conn = mongoose.connection;
+    const bucket = new GridFSBucket(conn.db, { bucketName });
+    const file = await conn
+      .collection(`${bucketName}.files`)
+      .findOne({ _id: new ObjectId(profile.resume) });
+
+    if (!file) {
+      return res.status(404).json({ error: "File not found" });
+    }
+
+    const contentType = file.contentType || "application/octet-stream";
+    res.set("Content-Type", contentType);
+
+    const downloadStream = bucket.openDownloadStream(file._id);
+    downloadStream.pipe(res);
+
+    downloadStream.on("error", (error) => {
+      console.error("Error during file streaming:", error);
+      res.status(500).json({ error: "File streaming error" });
+    });
+  } catch (error) {
+    console.error("Error fetching resume:", error);
     res.status(500).json({ error: "Server error" });
   }
 };

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios'; // Make sure to install axios using npm or yarn
+import axios from 'axios';
+import { useParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Timer } from 'lucide-react';
 
@@ -8,39 +9,42 @@ const Quiz = () => {
   const [answers, setAnswers] = useState({});
   const [submitted, setSubmitted] = useState(false);
   const [score, setScore] = useState(0);
-  const [timeLeft, setTimeLeft] = useState(300); // 5 minutes timer
-  const [error, setError] = useState(null); // Error state for API errors
+  const [timeLeft, setTimeLeft] = useState(300); // 5-minute timer
+  const [error, setError] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  const { courseId } = useParams();
 
   useEffect(() => {
     const fetchQuestions = async () => {
+      setLoading(true);
       try {
-        const quizId = '6752ac3bc09817e66d22aabb'; 
-        const response = await axios.get(`http://localhost:5000/api/quiz/questions`);
+        const response = await axios.get(
+          `http://localhost:5000/api/quiz/questions/${courseId}`
+        );
 
-        // Check if the response is an array of questions
         if (Array.isArray(response.data)) {
-          setQuestions(response.data);
+          const allQuestions = response.data.flatMap((week) => week.quiz);
+          setQuestions(allQuestions);
         } else {
-            console.log(response.data);
           setError('Failed to load questions. Please try again later.');
         }
       } catch (err) {
-        console.log(err);
         console.error('API Error:', err.response || err.message);
         setError('Failed to load questions. Please try again later.');
+      } finally {
+        setLoading(false);
       }
     };
 
     fetchQuestions();
-  }, []);
+  }, [courseId]);
 
   useEffect(() => {
-    // Timer logic to update timeLeft every second
     const timer = setInterval(() => {
       setTimeLeft((prev) => (prev > 0 ? prev - 1 : 0));
     }, 1000);
 
-    // Cleanup timer on component unmount
     return () => clearInterval(timer);
   }, []);
 
@@ -81,11 +85,15 @@ const Quiz = () => {
         </div>
       </div>
 
+      {loading && (
+        <div className="text-center text-blue-500">Loading questions...</div>
+      )}
+
       {error && (
         <div className="text-red-600 text-center mb-5">{error}</div>
       )}
 
-      {!submitted && questions.length > 0 && (
+      {!submitted && questions.length > 0 && !loading && (
         <div>
           {questions.map((question) => (
             <motion.div
@@ -111,7 +119,9 @@ const Quiz = () => {
                       name={question._id}
                       value={option}
                       className="hidden"
-                      onChange={() => handleAnswerChange(question._id, option)}
+                      onChange={() =>
+                        handleAnswerChange(question._id, option)
+                      }
                     />
                     <div
                       className={`w-5 h-5 border rounded-full ${
@@ -166,7 +176,7 @@ const Quiz = () => {
         </div>
       )}
 
-      {!submitted && questions.length > 0 && (
+      {!submitted && questions.length > 0 && !loading && (
         <button
           className="mt-5 px-4 py-2 bg-green-500 text-white rounded-md shadow-md hover:bg-green-600"
           onClick={handleSubmit}

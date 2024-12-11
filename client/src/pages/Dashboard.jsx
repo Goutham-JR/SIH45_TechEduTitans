@@ -280,12 +280,7 @@ const OverviewPage = () => {
                 value={totalLessonsCompleted}
                 color="#8B5CF6"
               />
-              <StatCard
-                name="Badges"
-                icon={ShoppingBag}
-                value="5"
-                color="#EC4899"
-              />
+              
               <StatCard
                 name="Total Learning Hours"
                 icon={BarChart2}

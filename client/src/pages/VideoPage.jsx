@@ -436,20 +436,24 @@ const ResourcesComponent = (resourceId) => {
         <h2 className="text-2xl font-bold">Learning Resources</h2>
       </div>
 
-      {/* Resource List */}
-      <div className="space-y-4">
-        <div className="flex justify-between items-center p-4 bg-gray-700 rounded-lg hover:bg-gray-600 transition">
-          <div style={{ height: "60vh", width: "100%" }}>
-            <Worker workerUrl="https://unpkg.com/pdfjs-dist@3.11.174/build/pdf.worker.min.js">
-              <Viewer
-                fileUrl={resourceId.resourceId}
-                plugins={[defaultLayoutPluginInstance]}
-                defaultScale={SpecialZoomLevel.PageWidth} // Fit the width of the container
-              />
-            </Worker>
+      {!resourceId.resourceId ? (
+        <div className="space-y-4">
+          <div className="flex justify-between items-center p-4 bg-gray-700 rounded-lg hover:bg-gray-600 transition">
+            <div style={{ height: "60vh", width: "100%" }}>
+              <Worker workerUrl="https://unpkg.com/pdfjs-dist@3.11.174/build/pdf.worker.min.js">
+                <Viewer
+                  fileUrl={resourceId.resourceId}
+                  plugins={[defaultLayoutPluginInstance]}
+                  defaultScale={SpecialZoomLevel.PageWidth} // Fit the width of the container
+                />
+              </Worker>
+            </div>
           </div>
         </div>
-      </div>
+      ) : (
+        <div className="space-y-4"></div>
+      )}
+      {/* Resource List */}
     </div>
   );
 };
@@ -544,7 +548,7 @@ const CourseContentComponent = ({ course, onVideoSelect, progress }) => {
 
                   {/* Right Section: Duration */}
                   <span className="text-blue-400 text-sm font-medium">
-                    {video.duration} mins
+                    {(video.duration / 60).toFixed(2)} mins
                   </span>
                 </div>
               ))}
@@ -572,6 +576,7 @@ const CourseContentComponent = ({ course, onVideoSelect, progress }) => {
 };
 
 const VideoDescriptionComponent = ({
+  userId,
   title,
   instructor,
   uploadDate,
@@ -618,15 +623,17 @@ const VideoDescriptionComponent = ({
       {/* Video Metadata */}
       <div className="flex flex-wrap justify-between items-center mb-4">
         <div className="text-gray-100 w-full sm:w-auto">
-          <p>
-            {formatViewCount(views)} • {formatDate(uploadDate)}
-          </p>
+          <p>{formatDate(uploadDate)}</p>
         </div>
       </div>
 
       {/* Instructor Information */}
       <div className="flex items-center mb-4">
-        <div className="w-12 h-12 rounded-full bg-gray-300 mr-3"></div>
+        <img
+          src={`http://localhost:5000/api/auth/photo/${userId}`}
+          alt="Instructor"
+          className="w-12 h-12 rounded-full mr-3"
+        />
         <div>
           <h2 className="font-semibold">{instructor}</h2>
           <p className="text-sm text-gray-100">Course Instructor</p>
@@ -712,14 +719,14 @@ const VideoPlayer = ({ thumbnail, video, userId, courseId, setProgress }) => {
         }
       }
     };
-  
+
     window.addEventListener("beforeunload", handleUnload);
-  
+
     return () => {
       window.removeEventListener("beforeunload", handleUnload);
     };
   }, [timeSpent, video]); // Dependencies to ensure the latest state is used
-  
+
   useEffect(() => {
     return () => {
       // When video changes, ensure the current `timeSpent` is sent to the server
@@ -728,7 +735,6 @@ const VideoPlayer = ({ thumbnail, video, userId, courseId, setProgress }) => {
       }
     };
   }, [video]);
-  
 
   useEffect(() => {
     // Function to handle cleanup on video change
@@ -737,19 +743,22 @@ const VideoPlayer = ({ thumbnail, video, userId, courseId, setProgress }) => {
         try {
           await handleTimeUpdate(); // Explicitly send the update
         } catch (error) {
-          console.error("Error updating video progress on video change:", error);
+          console.error(
+            "Error updating video progress on video change:",
+            error
+          );
         }
       }
     };
-  
+
     updateTimeOnVideoChange();
-  
+
     // Cleanup function
     return () => {
       updateTimeOnVideoChange();
     };
   }, [video]);
-  
+
   const handleTimeUpdate = async () => {
     if (!videoRef.current) return;
     const videoId = video.split("/").pop();
@@ -769,7 +778,7 @@ const VideoPlayer = ({ thumbnail, video, userId, courseId, setProgress }) => {
     }
     setTimeSpent(0);
   };
-  
+
   const handleVideoEnd = async (videoUrl) => {
     const videoId = videoUrl.split("/").pop(); // Extract the video ID
     // Update watchedVideos state to reflect the watched video
@@ -847,7 +856,6 @@ const VideoPlayer = ({ thumbnail, video, userId, courseId, setProgress }) => {
     setIsFullscreen(!isFullscreen);
   };
 
-  
   const handleMouseMove = () => {
     setShowControls(true); // Show controls on mouse move
     clearTimeout(timeoutRef.current); // Clear existing timeout
@@ -903,7 +911,6 @@ const VideoPlayer = ({ thumbnail, video, userId, courseId, setProgress }) => {
           handleVideoEnd(video);
           setIsPlaying(false);
         }}
-       
       ></video>
 
       {showControls && (
@@ -995,7 +1002,7 @@ const OverviewPage = () => {
   const [query, setQuery] = useState(location.state?.query || "");
   const [course, setCourse] = useState(null);
   const [instructorName, setInstructorName] = useState("");
-  const [isbibilography, setisbibilography] = useState(true);
+  const [isbibilography, setisbibilography] = useState(false);
   const [userId, setUserId] = useState();
   const [progress, setProgress] = useState();
   const [hasGivenFeedback, setHasGivenFeedback] = useState(null);
@@ -1072,7 +1079,6 @@ const OverviewPage = () => {
 
     fetchInstructorName();
   }, [course?.userId]);
-  
 
   useEffect(() => {
     if (course?.weeks?.length > 0 && course.weeks[0].videos?.length > 0) {
@@ -1213,6 +1219,7 @@ const OverviewPage = () => {
                 </div>
                 <div className="mt-4 p-2 sm:p-2">
                   <VideoDescriptionComponent
+                    userId={course?.userId}
                     title={selectedVideo.title}
                     instructor={instructorName}
                     uploadDate={selectedVideo.uploadDate}
