@@ -14,7 +14,6 @@ import ResultsAndProgressPage from './pages/ResultsProgress';
 import Logout from './components/Logout';
 import QuizPage from './pages/QuizPage';
 import BadgesAndAchievementsPage from './pages/BadgeAchivements';
-import Testing from './components/Testing';
 import ForgotPassword from './components/ForgotPassword';
 import Admin from './components/admin';
 import Quiz from './components/quiz';
@@ -34,6 +33,7 @@ import InstructorProfile from './components/InstructorProfile';
 import Quizmain from './pages/Quiz';
 import Recommendation from './pages/Recommendation';
 import Otp from './components/otp';
+import SignUpInstructor from './components/SignUpInstructor';
 
 
 function App() {
@@ -57,24 +57,25 @@ function App() {
         <Route path="/certificate" element={<CertificateGenerator />} />
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/logout" element={<Logout />} />
-        <Route path="/ForgotPassword" element={< ForgotPassword/>} />
-        <Route path="/admin" element={< Admin/>} />
-        <Route path="/quiz" element={< Quiz/>} />
-        <Route path="/ViewResourse" element={< ViewResource/>} />
-        <Route path="/StudentCourse" element={< StudentCourse/>} />
-        <Route path="/StudentResource" element={< StudentResource/>} />
-        <Route path="/StudentAssignment" element={< StudentAssignment/>} />
-        <Route path="/StudentQuizzes" element={< StudentQuizzes/>} />
-        <Route path="/StudentLeaderBoard" element={< StudentLeaderBoard/>} />
-        <Route path="/StudentCalender" element={< StudentCalender/>} />
-        <Route path="/Setting" element={< Setting/>} />
-        <Route path="/SearchList" element={< SearchList/>} />
-        <Route path="/CoursePage" element={< CoursePage/>} />
-        <Route path="/CourseVideo" element={< CourseVideoPage/>} />
-        <Route path="/InstructorProfile" element={< InstructorProfile/>} />
-        <Route path="/quizmain" element={< Quizmain/>} />
-        <Route path="/recommendation" element={< Recommendation/>} />
-        <Route path="/otp" element={< Otp/>} />
+        <Route path="/ForgotPassword" element={<ForgotPassword />} />
+        <Route path="/admin" element={<Admin />} />
+        <Route path="/quiz" element={<Quiz />} />
+        <Route path="/ViewResourse" element={<ViewResource />} />
+        <Route path="/StudentCourse" element={<StudentCourse />} />
+        <Route path="/StudentResource" element={<StudentResource />} />
+        <Route path="/StudentAssignment" element={<StudentAssignment />} />
+        <Route path="/StudentQuizzes" element={<StudentQuizzes />} />
+        <Route path="/StudentLeaderBoard" element={<StudentLeaderBoard />} />
+        <Route path="/StudentCalender" element={<StudentCalender />} />
+        <Route path="/Setting" element={<Setting />} />
+        <Route path="/SearchList" element={<SearchList />} />
+        <Route path="/CoursePage" element={<CoursePage />} />
+        <Route path="/CourseVideo" element={<CourseVideoPage />} />
+        <Route path="/InstructorProfile" element={<InstructorProfile />} />
+        <Route path="/quizmain" element={<Quizmain />} />
+        <Route path="/recommendation" element={<Recommendation />} />
+        <Route path="/otp" element={<Otp />} />
+        <Route path="/signup-instructor" element={<SignUpInstructor />} />
       </Routes>
     </BrowserRouter>
   );
