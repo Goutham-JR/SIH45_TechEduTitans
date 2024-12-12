@@ -1108,7 +1108,7 @@ const DangerZone = () => {
 };
 
 
-const ResumeUpload = () => {
+const ResumeUpload = ({userId}) => {
   const [resume, setResume] = useState(null);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [snackbar, setSnackbar] = useState({ open: false, message: "", severity: "" });
@@ -1130,10 +1130,11 @@ const ResumeUpload = () => {
 
     const formData = new FormData();
     formData.append("resume", resume);
+    formData.append("userId", userId);
 
     try {
       const response = await axios.post(
-        "http://localhost:5000/api/upload/resume",
+        "http://localhost:5000/api/auth/uploadresume",
         formData,
         {
           headers: {
@@ -1146,6 +1147,7 @@ const ResumeUpload = () => {
       setResume(null);
       setUploadProgress(0);
     } catch (error) {
+      console.log(error);
       setSnackbar({ open: true, message: "Upload failed. Please try again.", severity: "error" });
     }
   };
@@ -1283,7 +1285,7 @@ const SettingsPage = () => {
             />
           </SettingSection>
           <SkillInput />
-          <ResumeUpload/>
+          <ResumeUpload  userId={userDetail?._id}/>
           <Address />
           <DangerZone />
         </div>

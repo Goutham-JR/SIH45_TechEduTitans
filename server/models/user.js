@@ -20,6 +20,7 @@ const userSchema = new mongoose.Schema(
     status: { type: String, default: "Active" },
     resetOtp: {type: String, required: false},
     resetOtpExpires: {type: String, required: false},
+    resume:{type: String, required: false},
 
   },
   {

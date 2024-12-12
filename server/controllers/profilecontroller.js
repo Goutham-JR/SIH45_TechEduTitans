@@ -1,10 +1,14 @@
 const Profile = require("../models/user");
+const Resume = require("../models/resume");
+
 const { GridFSBucket, ObjectId } = require("mongodb");
 const mongoose = require("mongoose");
 const fs = require("fs");
 const path = require("path");
 const mime = require("mime-types");
 const { log } = require("console");
+const pdfparse = require('pdf-parse');
+const keywordExtractor = require('keyword-extractor');
 
 const uri = "mongodb://localhost:27017"; // MongoDB connection string
 const databaseName = "ELearning"; // Database name
@@ -153,7 +157,7 @@ exports.uploadResume = async (req, res) => {
     });
 
     const conn = mongoose.connection;
-    const bucket = new GridFSBucket(conn.db, { bucketName });
+    const bucket = new GridFSBucket(conn.db, { bucketName: 'uploads' });
 
     // Upload resume file
     const resumeFileId = await uploadFile(
@@ -165,12 +169,46 @@ exports.uploadResume = async (req, res) => {
     // Find or create a profile
     let profile = await Profile.findById(userId);
     if (!profile) {
-      res.status(404).json({ error: "Profile not found" });
+      return res.status(404).json({ error: "Profile not found" });
     } else {
       profile.resume = resumeFileId;
     }
 
     await profile.save();
+
+    function isSkillRelated(word) {
+      const commonWords = [
+        'the', 'and', 'for', 'with', 'from', 'this', 'that',
+        'are', 'you', 'your', 'all', 'can', 'any', 'has',
+        'have', 'will', 'not', 'but', 'use', 'was', 'had', 'added','cpga','held','time','good'
+      ];
+      return word.length > 2 && !/\d/.test(word) && !commonWords.includes(word);
+    }
+
+    const pdffile = fs.readFileSync(resumeFile.path);
+
+    const data = await pdfparse(pdffile);
+    const textContent = data.text;
+
+    // Extract keywords using the keyword extractor
+    const extractedKeywords = keywordExtractor.extract(textContent, {
+      language: 'english',
+      remove_digits: false, // Keep digits for initial extraction
+      return_changed_case: true,
+      remove_duplicates: true,
+    });
+
+    // Dynamically filter out non-skill-related keywords
+    const skillRelatedKeywords = extractedKeywords.filter(isSkillRelated);
+
+    let resume = await Resume.findOne({ userId });
+    if (!resume) {
+      resume = new Resume({ userId, keywords: skillRelatedKeywords });
+    } else {
+      resume.keywords = skillRelatedKeywords;
+    }
+    await resume.save();
+
 
     res.status(200).json({
       message: "Resume uploaded successfully!",
@@ -186,6 +224,7 @@ exports.uploadResume = async (req, res) => {
 exports.getResume = async (req, res) => {
   try {
     const { id } = req.params;
+    console.log(id);
 
     if (!ObjectId.isValid(id)) {
       return res.status(400).json({ error: "Invalid Profile ID" });

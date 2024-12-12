@@ -17,43 +17,45 @@ const studentRouter = require('../routers/studentRouter');
 const feedbackRouter = require('../routers/feedbackRouter');
 const quizmainRouter = require('../routers/quizsampleRouter');
 const recommendcourseRouter = require("../routers/recommendRouter");
+const resumeRouter = require("../routers/resumeRouter");
 
-const fs = require('fs');
-const pdfparse = require('pdf-parse');
-const keywordExtractor = require('keyword-extractor');
 
-function isSkillRelated(word) {
-  const commonWords = [
-    'the', 'and', 'for', 'with', 'from', 'this', 'that',
-    'are', 'you', 'your', 'all', 'can', 'any', 'has',
-    'have', 'will', 'not', 'but', 'use', 'was', 'had', 'added','cpga','held','time','good'
-  ];
-  return word.length > 2 && !/\d/.test(word) && !commonWords.includes(word);
-}
+// const fs = require('fs');
+// const pdfparse = require('pdf-parse');
+// const keywordExtractor = require('keyword-extractor');
 
-const pdffile = fs.readFileSync('./routers/kiran_resume.pdf');
+// function isSkillRelated(word) {
+//   const commonWords = [
+//     'the', 'and', 'for', 'with', 'from', 'this', 'that',
+//     'are', 'you', 'your', 'all', 'can', 'any', 'has',
+//     'have', 'will', 'not', 'but', 'use', 'was', 'had', 'added','cpga','held','time','good'
+//   ];
+//   return word.length > 2 && !/\d/.test(word) && !commonWords.includes(word);
+// }
 
-pdfparse(pdffile)
-  .then(function (data) {
-    const textContent = data.text;
+// const pdffile = fs.readFileSync('./routers/kiran_resume.pdf');
 
-    // Extract keywords using the keyword extractor
-    const extractedKeywords = keywordExtractor.extract(textContent, {
-      language: 'english',
-      remove_digits: false, // Keep digits for initial extraction
-      return_changed_case: true,
-      remove_duplicates: true,
-    });
+// pdfparse(pdffile)
+//   .then(function (data) {
+//     const textContent = data.text;
 
-    // Dynamically filter out non-skill-related keywords
-    const skillRelatedKeywords = extractedKeywords.filter(isSkillRelated);
+//     // Extract keywords using the keyword extractor
+//     const extractedKeywords = keywordExtractor.extract(textContent, {
+//       language: 'english',
+//       remove_digits: false, // Keep digits for initial extraction
+//       return_changed_case: true,
+//       remove_duplicates: true,
+//     });
 
-    console.log('Extracted Skill-Related Keywords:');
-    console.log(skillRelatedKeywords);
-  })
-  .catch(function (err) {
-    console.error('Error parsing PDF:', err.message);
-  });
+//     // Dynamically filter out non-skill-related keywords
+//     const skillRelatedKeywords = extractedKeywords.filter(isSkillRelated);
+
+//     console.log('Extracted Skill-Related Keywords:');
+//     console.log(skillRelatedKeywords);
+//   })
+//   .catch(function (err) {
+//     console.error('Error parsing PDF:', err.message);
+//   });
 
 
 
@@ -119,7 +121,7 @@ app.use('/api/account', deleteRouter);
 app.use('/api/feedback', feedbackRouter);
 app.use('/api/quiz', quizmainRouter);
 app.use("/api/courses", recommendcourseRouter);
-
+app.use('/api/upload', resumeRouter);
 
 
 
