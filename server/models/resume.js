@@ -6,6 +6,9 @@ const resumeschema = new mongoose.Schema({
         ref: "User",
         required: true,
     },
-    file: { type: String },
     keywords: { type: [String]},
 })
+
+const Resume = mongoose.model("Resume", resumeschema);
+
+module.exports = Resume;

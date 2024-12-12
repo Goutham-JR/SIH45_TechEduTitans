@@ -1,28 +1,61 @@
 import React, { useEffect, useState } from "react";
 import CourseCards from "./Coursecard";
 import axios from "axios";
+import { useNavigate } from "react-router-dom";
 
-const Recommended_Courses = ({ userId }) => {
+const Recommended_Courses = () => {
   const [courses, setCourses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [userIds, setUser] = useState(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
-    const fetchMatchedCourses = async () => {
+    const fetchUser = async () => {
       try {
-        const response = await axios.get('http://localhost:5000/api/courses/matchedcourses');
-        console.log(response); // Log the response to see the data structure
-        setCourses(response.data.matchedCourses); // Set the courses in state
-        setLoading(false);
+        const response = await axios.get(
+          "http://localhost:5000/api/protected/check-auth",
+          {
+            withCredentials: true, // Send cookies with the request
+          }
+        );
+        const user = response.data.user;
+        if (user) {
+          setUser(user);
+        } else {
+          throw new Error("User authentication failed");
+        }
       } catch (err) {
-        console.error("Error fetching matched courses:", err);
-        setError(err.response?.data?.message || "Failed to fetch courses.");
+        console.error("Error fetching user:", err);
+        setError("Failed to authenticate user.");
+        setUser(null);
         setLoading(false);
       }
     };
 
+    fetchUser();
+  }, []);
+
+  useEffect(() => {
+    const fetchMatchedCourses = async () => {
+      if (userIds && userIds.id) {
+        try {
+          setLoading(true); // Start loading before fetching
+          const response = await axios.get(
+            `http://localhost:5000/api/courses/matchedcourses/${userIds.id}`
+          );
+          setCourses(response.data.matchedCourses || []);
+        } catch (err) {
+          console.error("Error fetching matched courses:", err);
+          setError(err.response?.data?.message || "Failed to fetch courses.");
+        } finally {
+          setLoading(false); // Stop loading after fetching
+        }
+      }
+    };
+
     fetchMatchedCourses();
-  }, []); // Empty dependency array ensures this runs only once when the component mounts
+  }, [userIds]); // Fetch courses whenever `userIds` changes
 
   // Error message rendering
   if (error) {
@@ -48,12 +81,13 @@ const Recommended_Courses = ({ userId }) => {
               courseRating={course.rating || 4} // Default rating if not available
               instructorName={course.instructorName || "Unknown Instructor"}
               courseDescription={course.description || "No description available."}
-              
               onViewDetails={() =>
                 alert(`Viewing details for ${course.title}`)
               }
               onInstructorClick={() =>
-                alert(`Viewing instructor profile for ${course.instructorName}`)
+                alert(
+                  `Viewing instructor profile for ${course.instructorName}`
+                )
               }
             />
           ))}

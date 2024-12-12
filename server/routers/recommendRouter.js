@@ -3,6 +3,6 @@ const { getCoursesBySkillsAndKeywords } = require("../controllers/recommendcontr
 
 const router = express.Router();
 
-router.get("/matchedcourses", getCoursesBySkillsAndKeywords);
+router.get("/matchedcourses/:userId", getCoursesBySkillsAndKeywords);
 
 module.exports = router;
