@@ -570,7 +570,8 @@ const SkillInput = () => {
   });
 
   const skillSchema = Joi.string()
-    .pattern(/^[A-Za-z][A-Za-z0-9\s!@#$%^&(),.?":{}|<>_\-+]$/) // Updated to allow plus (+) and hyphen (-) and other special characters
+
+    .pattern(/^[A-Za-z][A-Za-z0-9\s!@#$%^&(),.?":{}|<>_\-+]*$/) // Updated to allow plus (+) and hyphen (-) and other special characters
     .required()
     .messages({
       "string.empty": "Skill cannot be empty.",

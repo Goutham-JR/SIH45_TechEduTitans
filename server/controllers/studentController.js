@@ -274,3 +274,42 @@ const calculateTotalVideos = (course) => {
 
   return totalVideos;
 };
+
+
+exports.checkQuizStatus = async (req, res) => {
+  const { userId, courseId, weekIndex } = req.query;
+
+
+  try {
+    // Find quiz completion record in the database
+    const quiz = await Quiz.findOne({
+      userId,
+      courseId,
+      weekIndex: parseInt(weekIndex),
+    });
+
+    if (quiz && quiz.completed) {
+      return res.status(200).json({ completed: true });
+    } else {
+      return res.status(200).json({ completed: false });
+    }
+  } catch (error) {
+    console.error("Error checking quiz status:", error);
+    res.status(500).json({
+      error: "Internal Server Error. Please try again later.",
+    });
+  }
+};
+
+exports.getEnrolledDetails = async (req, res) => {
+  const { userId } = req.params;
+
+  console.log("Received userId:", req.params);
+
+  try {
+    const enrollments = await Enrollment.find({ userId: userId });
+    res.json({ enrollments });
+  } catch (error) {
+    res.status(500).json({ error: 'Error fetching user enrollment details' });
+  }
+};

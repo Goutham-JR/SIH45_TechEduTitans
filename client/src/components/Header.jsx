@@ -452,8 +452,15 @@ const Header = () => {
                     <Typography
                       key={index}
                       onClick={() => {
-                        setSearchTerm(suggestion.name || suggestion);
-                        setSearchAnchorEl(null);
+                        navigate("/searchlist", {
+                          state: {
+                            query: suggestion.name || suggestion.title || "",
+                          },
+                        });
+                        setSearchTerm(
+                          suggestion.name || suggestion.title || ""
+                        );
+                        setSearchAnchorEl(null); // Close the popover
                       }}
                       sx={{
                         px: 2,
@@ -466,7 +473,7 @@ const Header = () => {
                         },
                       }}
                     >
-                      {suggestion.name || suggestion}
+                      {suggestion.name || suggestion.title || "Unnamed Course"}
                     </Typography>
                   ))
                 ) : (
@@ -675,7 +682,7 @@ const Header = () => {
                   <List>
                     {userDetail?.role === "Student" ? (
                       <ListItem button="true">
-                        <ListItemText primary="My Learning" />
+                        <ListItemText primary="My Learning" onClick={()=>navigate('/dashboard')}/>
                       </ListItem>
                     ) : (
                       <ListItem button="true">
@@ -900,7 +907,7 @@ const Header = () => {
               fullWidth
               type="submit"
               variant="contained"
-              onClick={() => navigate('/otp')}
+             
               sx={{
                 mt: 2,
                 backgroundColor: "#478eff",

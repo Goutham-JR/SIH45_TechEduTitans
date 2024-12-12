@@ -11,6 +11,8 @@ const {
   getTotalLessonsCompleted,
   getTotalTimeSpent,
   getLatestCourseId,
+  checkQuizStatus,
+  getEnrolledDetails,
 } = require("../controllers/studentController");
 
 router.post("/progress", updateProgress);
@@ -23,5 +25,6 @@ router.get("/enrollments/enrollcount/:userId", getCountofEnrolled);
 router.get("/progress/lessons-completed/:userId", getTotalLessonsCompleted);
 router.get("/videotimings/time-spent/:userId", getTotalTimeSpent);
 router.get("/videotimings/latest-course/:userId", getLatestCourseId);
-
+router.get("/quiz-status", checkQuizStatus);
+router.get("/enrollments/details/:userId", getEnrolledDetails);
 module.exports = router;

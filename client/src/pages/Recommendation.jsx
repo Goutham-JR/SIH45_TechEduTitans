@@ -7,6 +7,7 @@ const Recommended_Courses = () => {
   const [courses, setCourses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [userDetail, setUserDetail] = useState(null);
   const [userIds, setUser] = useState(null);
   const navigate = useNavigate();
 
@@ -16,7 +17,7 @@ const Recommended_Courses = () => {
         const response = await axios.get(
           "http://localhost:5000/api/protected/check-auth",
           {
-            withCredentials: true, // Send cookies with the request
+            withCredentials: true, 
           }
         );
         const user = response.data.user;
@@ -37,10 +38,30 @@ const Recommended_Courses = () => {
   }, []);
 
   useEffect(() => {
+    const fetchInstructorName = async () => {
+      if (courses.length > 0 && courses[0]?.userId) {
+        try {
+          const response = await axios.get(
+            `http://localhost:5000/api/protected/username/${courses[0].userId}`,
+            {
+              withCredentials: true,
+            }
+          );
+          setUserDetail(response.data || { name: "Unknown" });
+        } catch (error) {
+          console.error("Error fetching instructor data:", error);
+        }
+      }
+    };
+
+    fetchInstructorName();
+  }, [courses]);
+
+  useEffect(() => {
     const fetchMatchedCourses = async () => {
       if (userIds && userIds.id) {
         try {
-          setLoading(true); // Start loading before fetching
+          setLoading(true);
           const response = await axios.get(
             `http://localhost:5000/api/courses/matchedcourses/${userIds.id}`
           );
@@ -49,28 +70,27 @@ const Recommended_Courses = () => {
           console.error("Error fetching matched courses:", err);
           setError(err.response?.data?.message || "Failed to fetch courses.");
         } finally {
-          setLoading(false); // Stop loading after fetching
+          setLoading(false);
         }
       }
     };
 
     fetchMatchedCourses();
-  }, [userIds]); // Fetch courses whenever `userIds` changes
+  }, [userIds]);
 
-  // Error message rendering
   if (error) {
     return <div className="text-red-500 text-center">{error}</div>;
   }
 
-  // Loading message rendering
   if (loading) {
     return <div className="text-white text-center">Loading courses...</div>;
   }
 
-  // Rendering courses
   return (
     <div className="bg-gray-800 min-h-screen p-6">
-      <h1 className="text-3xl font-bold text-white mb-6">Recommended Courses</h1>
+      <h1 className="text-3xl font-bold text-white mb-6">
+        Recommended Courses
+      </h1>
       {courses.length > 0 ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {courses.map((course) => (
@@ -78,17 +98,19 @@ const Recommended_Courses = () => {
               key={course._id}
               courseImage={course.thumbnailtrailer || "image"}
               courseName={course.title}
-              courseRating={course.rating || 4} // Default rating if not available
-              instructorName={course.instructorName || "Unknown Instructor"}
-              courseDescription={course.description || "No description available."}
+              courseRating={course.rating || 4}
+              instructorName={userDetail?.name || "Unknown Instructor"}
+              courseDescription={
+                course.description || "No description available."
+              }
+              instructorImage={`http://localhost:5000/api/auth/photo/${course?.userId}`}
               onViewDetails={() =>
-                alert(`Viewing details for ${course.title}`)
+                navigate("/CoursePage", { state: { query: course._id} })
               }
               onInstructorClick={() =>
-                alert(
-                  `Viewing instructor profile for ${course.instructorName}`
-                )
+                navigate(`/instructor/${course.instructorId}`)
               }
+              onClick={() => navigate("/CoursePage", { state: { query: course._id} })}
             />
           ))}
         </div>

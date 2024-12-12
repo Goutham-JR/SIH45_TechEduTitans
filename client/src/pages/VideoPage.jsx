@@ -432,9 +432,6 @@ const ResourcesComponent = (resourceId) => {
   return (
     <div className="bg-gray-800 text-white rounded-lg shadow-md p-6">
       {/* Header Section */}
-      <div className="flex justify-between items-center mb-6">
-        <h2 className="text-2xl font-bold">Learning Resources</h2>
-      </div>
 
       {!resourceId.resourceId ? (
         <div className="space-y-4">
@@ -451,7 +448,9 @@ const ResourcesComponent = (resourceId) => {
           </div>
         </div>
       ) : (
-        <div className="space-y-4"></div>
+        <div className="space-y-4">
+          <p>Resource is not available for the video</p>
+        </div>
       )}
       {/* Resource List */}
     </div>
@@ -460,13 +459,98 @@ const ResourcesComponent = (resourceId) => {
 
 const CourseContentComponent = ({ course, onVideoSelect, progress }) => {
   const [openWeeks, setOpenWeeks] = useState([0]); // First week open by default
-
+  const [currentVideoIndex, setCurrentVideoIndex] = useState(null); // Track current video
+  const [completedVideos, setCompletedVideos] = useState([]); // Track completed videos
+  const [finishedcourse, setfinishedcourse] = useState();
+  const [quizStatus, setQuizStatus] = useState({});
+  const navigate = useNavigate();
   const toggleWeek = (weekIndex) => {
     setOpenWeeks((prev) =>
       prev.includes(weekIndex)
         ? prev.filter((w) => w !== weekIndex)
         : [...prev, weekIndex]
     );
+  };
+
+  const handleVideoComplete = (videoId) => {
+    if (!completedVideos.includes(videoId)) {
+      setCompletedVideos([...completedVideos, videoId]);
+    }
+  };
+
+  const [user, setUser] = useState(null);
+  useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        const response = await axios.get(
+          "http://localhost:5000/api/protected/check-auth",
+          {
+            withCredentials: true, // Send cookies with the request
+          }
+        );
+        setUser(response.data.user.id); // Set user data
+        setIsLogged(true);
+      } catch (err) {
+        setUser(null);
+        setIsLogged(false);
+      }
+    };
+
+    fetchUser();
+  }, [navigate]);
+
+  useEffect(() => {
+    const fetchAllQuizzes = async () => {
+      try {
+        const status = {};
+        for (let i = 0; i < course.weeks.length; i++) {
+          const completed = await checkQuizStatus(i);
+          status[i] = completed;
+        }
+        setQuizStatus(status);
+      } catch (error) {
+        console.error("Error fetching quiz statuses:", error);
+      }
+    };
+
+    if (course && user) {
+      fetchAllQuizzes();
+    }
+  }, [course, user]);
+
+  const checkQuizStatus = async (weekIndex) => {
+    try {
+      console.log(user, course._id, weekIndex)
+      const response = await axios.get(
+        "http://localhost:5000/api/student/quiz-status",
+        {
+          params: {
+            userId: user, // Ensure `userId` is defined globally
+            courseId: course._id,
+            weekIndex,
+          },
+          withCredentials: true,
+        }
+      );
+      return response.data.completed;
+    } catch (error) {
+      console.error("Error checking quiz status:", error);
+      return false; // Default to not completed if there's an error
+    }
+  };
+
+  const onVideoSelects = (video, videoIndex) => {
+    if (
+      videoIndex === 0 || // First video is always selectable
+      completedVideos.includes(
+        week.videos[videoIndex - 1].video // Ensure previous video is completed
+      )
+    ) {
+      setCurrentVideoIndex(videoIndex);
+      console.log("Playing:", video.title);
+    } else {
+      alert("You need to complete the current video first!");
+    }
   };
 
   const renderVideoIcon = (type) => {
@@ -481,94 +565,118 @@ const CourseContentComponent = ({ course, onVideoSelect, progress }) => {
         return null;
     }
   };
+  const AttendQuiz = async (weekIndex) => {
+    const isCompleted = quizStatus[weekIndex];
+    if (isCompleted) {
+      alert("You have already completed this quiz!");
+    } else {
+      navigate(`/quizmain/${course._id}/${weekIndex+1}`);
+    }
+  };
 
   if (!course || !course.weeks || !Array.isArray(course.weeks)) {
     return <p className="text-white">No course data available</p>;
   }
   return (
-    <div className="bg-gray-700 text-white rounded-lg shadow-md p-6 overflow-hidden max-h-screen">
-      {" "}
+    <div className="bg-gray-700 text-white rounded-lg shadow-md p-6 overflow-hidden max-h-screen overflow-y-auto">
       {/* Added max-h-screen here to limit height */}
-      <h2 className="text-2xl font-bold mb-6">{course.title}</h2>
-      {course?.weeks.map((week, weekIndex) => (
-        <div
-          key={week._id?.$oid || weekIndex}
-          className="mb-4 border-b border-gray-500 pb-4"
-        >
-          <button
-            onClick={() => toggleWeek(weekIndex)}
-            className="flex justify-between items-center w-full"
+      <div className="overflow-y-auto max-h-full">
+        <h2 className="text-2xl font-bold mb-6">{course.title}</h2>
+        {course?.weeks.map((week, weekIndex) => (
+          <div
+            key={week._id?.$oid || weekIndex}
+            className="mb-4 border-b border-gray-500 pb-4"
           >
-            <div>
-              <h3 className="text-lg font-semibold">
-                Week {week.weekNumber}: {week.weekTitle}
-              </h3>
-              <span className="text-sm text-gray-400 flex items-center">
-                <Clock className="w-4 h-4 mr-2" />
-                {week.totalDuration}
-              </span>
-            </div>
-            {openWeeks.includes(weekIndex) ? (
-              <ChevronUp className="w-6 h-6 text-gray-300" />
-            ) : (
-              <ChevronDown className="w-6 h-6 text-gray-300" />
-            )}
-          </button>
+            <button
+              onClick={() => toggleWeek(weekIndex)}
+              className="flex justify-between items-center w-full"
+            >
+              <div>
+                <h3 className="text-lg font-semibold">
+                  Week {week.weekNumber}: {week.weekTitle}
+                </h3>
+                <span className="text-sm text-gray-400 flex items-center">
+                  <Clock className="w-4 h-4 mr-2" />
+                  {week.totalDuration}
+                </span>
+              </div>
+              {openWeeks.includes(weekIndex) ? (
+                <ChevronUp className="w-6 h-6 text-gray-300" />
+              ) : (
+                <ChevronDown className="w-6 h-6 text-gray-300" />
+              )}
+            </button>
 
-          {openWeeks.includes(weekIndex) && (
-            <div className="mt-4 space-y-4">
-              {week.videos.map((video, videoIndex) => (
-                <div
-                  key={video._id?.$oid || videoIndex}
-                  onClick={() => {
-                    console.log(video.video, video.thumbnail);
-                    onVideoSelect({
-                      title: video.title,
-                      description: video.description,
-                      instructor: "", // Replace with real instructor data if available
-                      uploadDate: course.createdAt,
-                      thumbnail: `http://localhost:5000/api/course/media/${video.thumbnail}`,
-                      video: `http://localhost:5000/api/course/media/${video.video}`,
-                      resource: `http://localhost:5000/api/course/media/${video.resource}`,
-                      views: 1000 * (videoIndex + 1), // Replace with real view count
-                      likes: 10 * (videoIndex + 1), // Replace with real likes count
-                    });
-                  }}
-                  className="flex justify-between items-center p-4 bg-gray-800 rounded-lg hover:bg-gray-700 shadow-lg transition-all duration-200"
-                >
-                  {/* Left Section: Icon and Title */}
-                  <div className="flex items-center space-x-4">
-                    {progress?.completedVideos?.includes(video.video)
-                      ? renderVideoIcon("completed")
-                      : renderVideoIcon("video")}
-                    <span className="text-white text-base font-semibold">
-                      {video.title}
+            {openWeeks.includes(weekIndex) && (
+              <div className="mt-4 space-y-4">
+                {week.videos.map((video, videoIndex) => (
+                  <div
+                    key={video._id?.$oid || videoIndex}
+                    onClick={() => {
+                      console.log(video.video, video.thumbnail);
+                      onVideoSelect({
+                        title: video.title,
+                        description: video.description,
+                        instructor: "", // Replace with real instructor data if available
+                        uploadDate: course.createdAt,
+                        thumbnail: `http://localhost:5000/api/course/media/${video.thumbnail}`,
+                        video: `http://localhost:5000/api/course/media/${video.video}`,
+                        resource: `http://localhost:5000/api/course/media/${video.resource}`,
+                        views: 1000 * (videoIndex + 1), // Replace with real view count
+                        likes: 10 * (videoIndex + 1), // Replace with real likes count
+                      });
+                    }}
+                    className="flex justify-between items-center p-4 bg-gray-800 rounded-lg hover:bg-gray-700 shadow-lg transition-all duration-200"
+                  >
+                    {/* Left Section: Icon and Title */}
+                    <div className="flex items-center space-x-4">
+                      {progress?.completedVideos?.includes(video.video)
+                        ? renderVideoIcon("completed")
+                        : renderVideoIcon("video")}
+                      <span className="text-white text-base font-semibold">
+                        {video.title}
+                      </span>
+                    </div>
+
+                    {/* Right Section: Duration */}
+                    <span className="text-blue-400 text-sm font-medium">
+                      {(video.duration / 60).toFixed(2)} mins
                     </span>
                   </div>
-
-                  {/* Right Section: Duration */}
-                  <span className="text-blue-400 text-sm font-medium">
-                    {(video.duration / 60).toFixed(2)} mins
-                  </span>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      ))}
-      {/* Course Progress */}
-      <div className="mt-6 bg-gray-800 p-4 rounded-lg">
-        <div className="flex justify-between items-center mb-3">
-          <h3 className="font-semibold text-white">Course Progress</h3>
-          <span className="text-blue-400">
-            {progress?.progressPercentage}% Complete
-          </span>
-        </div>
-        <div className="w-full bg-gray-500 rounded-full h-2.5">
-          <div
-            className="bg-blue-600 h-2.5 rounded-full"
-            style={{ width: `${progress?.progressPercentage || 0}%` }}
-          ></div>
+                ))}
+                <motion.button
+                  onClick={() => AttendQuiz(weekIndex)}
+                  whileHover={{ scale: 1.1 }}
+                  style={{
+                    padding: "10px 20px",
+                    borderRadius: "8px",
+                    backgroundColor: quizStatus[weekIndex] ? "#999" : "#4CAF50",
+                    marginLeft: "125px",
+                    color: "#fff",
+                    border: "none",
+                    cursor: quizStatus[weekIndex] ? "not-allowed" : "pointer",
+                  }}
+                >
+                  {quizStatus[weekIndex] ? "Completed Quiz" : "Attend Quiz"}
+                </motion.button>
+              </div>
+            )}
+          </div>
+        ))}
+        {/* Course Progress */}
+        <div className="mt-6 bg-gray-800 p-4 rounded-lg">
+          <div className="flex justify-between items-center mb-3">
+            <h3 className="font-semibold text-white">Course Progress</h3>
+            <span className="text-blue-400">
+              {progress?.progressPercentage}% Complete
+            </span>
+          </div>
+          <div className="w-full bg-gray-500 rounded-full h-2.5">
+            <div
+              className="bg-blue-600 h-2.5 rounded-full"
+              style={{ width: `${progress?.progressPercentage || 0}%` }}
+            ></div>
+          </div>
         </div>
       </div>
     </div>

@@ -1,51 +1,10 @@
-import {
-  BookOpen,
-  Calendar,
-  ClipboardList,
-  FileText,
-  Menu,
-  PieChart,
-  Settings,
-  TrendingUp,
-} from "lucide-react";
+import { Menu } from "lucide-react";
 import { useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Link } from "react-router-dom";
 
-const SIDEBAR_ITEMS = [
-  {
-    name: "Dashboard",
-    icon: PieChart,
-    color: "#6366f1",
-    href: "/dashboard",
-  },
-  { name: "Courses", icon: BookOpen, color: "#8B5CF6", href: "/StudentCourse" },
-  {
-    name: "Resources",
-    icon: FileText,
-    color: "#EC4899",
-    href: "/StudentResource",
-  },
-  {
-    name: "Assignments",
-    icon: ClipboardList,
-    color: "#10B981",
-    href: "/StudentAssignment",
-  },
-
-  { name: "Quizzes", icon: PieChart, color: "#F59E0B", href: "/StudentQuizzes" },
-  {
-    name: "Leaderboard",
-    icon: TrendingUp,
-    color: "#FF5722",
-    href: "/StudentLeaderBoard",
-  },
-  { name: "Calendar", icon: Calendar, color: "#3B82F6", href: "/StudentCalender" },
-  { name: "Settings", icon: Settings, color: "#6EE7B7", href: "/setting" },
-];
-
-const Sidebar = () => {
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+const Sidebar = ({ items, collapsed = false }) => {
+  const [isSidebarOpen, setIsSidebarOpen] = useState(!collapsed);
 
   return (
     <motion.div
@@ -65,7 +24,7 @@ const Sidebar = () => {
         </motion.button>
 
         <nav className="mt-8 flex-grow">
-          {SIDEBAR_ITEMS.map((item) => (
+          {items.map((item) => (
             <Link key={item.href} to={item.href}>
               <motion.div className="flex items-center p-4 text-sm font-medium rounded-lg hover:bg-gray-700 transition-colors mb-2">
                 <item.icon

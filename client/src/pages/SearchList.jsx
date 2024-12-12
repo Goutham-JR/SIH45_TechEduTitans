@@ -289,13 +289,6 @@ const CourseFilters = ({ query, setQuery, fetchCourses }) => {
           />
         </div>
 
-        {/* Filter Sections */}
-        <FilterSection
-          title="Course Category"
-          items={categories}
-          section="categories"
-          icon={List}
-        />
 
         <FilterSection
           title="Duration"
@@ -304,12 +297,6 @@ const CourseFilters = ({ query, setQuery, fetchCourses }) => {
           icon={Clock}
         />
 
-        <FilterSection
-          title="Price Range"
-          items={priceRanges}
-          section="priceRange"
-          icon={DollarSign}
-        />
 
         <FilterSection
           title="Course Ratings"

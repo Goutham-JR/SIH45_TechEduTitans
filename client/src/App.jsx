@@ -31,10 +31,18 @@ import CoursePage from './pages/CoursePage'
 import CourseVideoPage from './pages/VideoPage';
 import InstructorProfile from './components/InstructorProfile';
 import Quizmain from './pages/Quiz';
-import Recommendation from './pages/Recommendation';
+import Recommendation from './pages/StudentRecommendation';
 import Otp from './components/otp';
 import SignUpInstructor from './components/SignUpInstructor';
-
+import SearchLearning from './pages/StudentLearning'
+import InstructorOverviewPage from "./pages/instructor/InstructorOverviewPage";
+import CoursesPage from "./pages/instructor/CoursesPage";
+import LearningPathPage from "./pages/instructor/LearningPathPage";
+import SettingsPage from "./pages/instructor/SettingsPage";
+import UploadCoursePage from "./pages/instructor/UploadCoursePage";
+import ContentLibraryPage from "./pages/instructor/ContentLibraryPage";
+import AddLearningPathPage from "./pages/instructor/learningpath/AddLearningPathPage";
+import { Footer } from "./components/common/Footer";
 
 function App() {
   axios.defaults.withCredentials = true;
@@ -76,6 +84,20 @@ function App() {
         <Route path="/recommendation" element={<Recommendation />} />
         <Route path="/otp" element={<Otp />} />
         <Route path="/signup-instructor" element={<SignUpInstructor />} />
+
+
+
+
+        <Route path="/instructor-dashboard" element={<InstructorOverviewPage />} />
+        <Route path="/admin" element={<AdminDashboard />} />
+        <Route path="/overview" element={<InstructorOverviewPage />} />
+        <Route path="/courses" element={<CoursesPage />} />
+        <Route path="/learningpath" element={<LearningPathPage />} />
+        <Route path="/settings" element={<SettingsPage />} />
+        <Route path="/uploadCourse" element={<UploadCoursePage />} />
+        <Route path="/contentlibrary" element={<ContentLibraryPage />} />
+        <Route path="/addlearningpath" element={<AddLearningPathPage />} />
+        <Route path="/footer" element={<Footer />} />
       </Routes>
     </BrowserRouter>
   );
